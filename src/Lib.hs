@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib (run) where
+module Lib (run, dev) where
 
 import Control.Applicative hiding (many)
 import Data.HashMap.Strict (HashMap)
@@ -10,6 +10,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Data.Void
+import System.Environment
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
 import qualified Text.Pretty.Simple as Print
@@ -32,8 +33,8 @@ data Value
 -- RUN
 
 
-run :: IO ()
-run = do
+dev :: IO ()
+dev = do
   stylesheet <- Text.readFile "style.scss"
   case Parser.runParser parser "" stylesheet of
     Left e ->
@@ -43,7 +44,24 @@ run = do
       Text.putStrLn (render r)
       putStrLn "\n======\n"
       Print.pPrint r
-      Text.writeFile "style.scss" (render r)
+
+
+run :: IO ()
+run = do
+  args <- getArgs
+  case args of
+    [] ->
+      putStrLn "Filepath is missing, I'm expecting and argument like 'style.scss'"
+    f:_ -> do
+      stylesheet <- Text.readFile f
+      case Parser.runParser parser "" stylesheet of
+        Left e ->
+          putStrLn $ Parser.errorBundlePretty e
+        Right r ->
+          Text.putStrLn (render r)
+
+
+-- RENDER
 
 
 render :: [Value] -> Text
@@ -56,17 +74,23 @@ renderValue (acc, i) value =
   case value of
     Selector name values ->
       ( acc
-        <>"\n"
+        <> "\n"
         <> indent i <> name <> " {\n"
         <> fst (foldl' renderValue ("", i + 1) (sortOn propsSorter values))
         <> indent i <> "}\n"
+      , i
+      )
+    AtRule rule name [] ->
+      ( acc
+        <> "\n"
+        <> indent i <> "@" <> rule <> " " <> name <> ";\n"
       , i
       )
     AtRule rule name values ->
       ( acc
         <> "\n"
         <> indent i
-        <>"@" <> rule <> " " <> name <> " {\n"
+        <> "@" <> rule <> " " <> name <> " {\n"
         <> fst (foldl' renderValue ("", i + 1) (sortOn propsSorter values))
         <> indent i <> "}\n"
       , i
@@ -94,7 +118,7 @@ selector :: Parser Value
 selector = do
   name <- Parser.takeWhileP (Just "selector") (/= '{')
   surround whitespace curlyOpen
-  ps <- Parser.someTill (Parser.try prop <|> atRule <|> selector) (char '}')
+  ps <- Parser.manyTill (Parser.try prop <|> atRule <|> selector) (char '}')
   whitespace
   pure $ Selector (Text.strip name) ps
 
@@ -103,11 +127,17 @@ atRule :: Parser Value
 atRule = do
   _ <- char '@'
   rule <- Parser.takeWhileP (Just "at rule") (/= ' ')
-  name <- Parser.takeWhileP (Just "at rule name") (/= '{')
-  surround whitespace curlyOpen
-  ps <- Parser.someTill (Parser.try prop <|> selector) (char '}')
-  whitespace
-  pure $ AtRule rule (Text.strip name) ps
+  name <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{')
+  maybeSemi <- optional semicolon
+  case maybeSemi of
+    Just _ -> do
+      whitespace
+      pure $ AtRule rule (Text.strip name) []
+    Nothing -> do
+      surround whitespace curlyOpen
+      ps <- Parser.manyTill (Parser.try prop <|> selector) (char '}')
+      whitespace
+      pure $ AtRule rule (Text.strip name) ps
 
 
 prop :: Parser Value

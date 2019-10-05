@@ -30,7 +30,7 @@ library:
   source-dirs: src
 
 executables:
-  scss-format-exe:
+  scss-format:
     main:                Main.hs
     source-dirs:         app
     ghc-options:

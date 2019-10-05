@@ -23,14 +23,11 @@ html {
 }
 
 body {
-    color: $typographyColor;
-    font-family: $fontSerif;
-
+    @include gradient($azure, $azureLight);
     @include breakpoint($huge) {
         font-size: 1.125rem;
 
         &:foo {
-            font-size: 1.125rem;
         }
     }
 }
