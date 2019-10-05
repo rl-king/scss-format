@@ -1,0 +1,50 @@
+name:                scss-format
+version:             0.1.0.0
+github:              "rl-king/scss-format"
+license:             BSD3
+author:              "Ruben Lie King"
+maintainer:          "hello@rubenlieking.com"
+copyright:           "2019 Ruben Lie King"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/rl-king/scss-format#readme>
+
+dependencies:
+  - base >= 4.7 && < 5
+  - megaparsec
+  - text
+
+library:
+  source-dirs: src
+
+executables:
+  scss-format-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - scss-format
+
+tests:
+  scss-format-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - scss-format
