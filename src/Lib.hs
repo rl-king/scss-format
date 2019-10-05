@@ -7,6 +7,10 @@ import Data.Text.IO as Text
 import Data.Void
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
+import qualified Text.Pretty.Simple as Print
+
+
+-- DEFINITIONS
 
 
 type Parser a =
@@ -15,31 +19,51 @@ type Parser a =
 
 data Value
   = Selector Text [Value]
+  | AtRule Text Text [Value]
   | Prop Text Text
   deriving (Show)
+
+
+-- RUN
 
 
 run :: IO ()
 run = do
   stylesheet <- Text.readFile "style.scss"
   print stylesheet
-  Parser.parseTest parser stylesheet
+  Print.pPrint $ Parser.runParser parser "" stylesheet
+
+
+-- PARSER
 
 
 parser :: Parser [Value]
 parser =
-  Parser.someTill selector Parser.atEnd
+  Parser.manyTill (atRule <|> selector) Parser.eof
 
 
 selector :: Parser Value
 selector = do
-  name <- Parser.takeWhileP (Just "selector") (\t -> t /= '{' && t /= ' ')
+  name <- Parser.takeWhileP (Just "selector") (\t -> t /= '{')
+  whitespace
+  curlyOpen
+  whitespace
+  ps <- Parser.someTill (Parser.try prop <|> atRule <|> selector) (char '}')
+  whitespace
+  pure $ Selector (strip name) ps
+
+
+atRule :: Parser Value
+atRule = do
+  _ <- string "@"
+  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ' ')
+  name <- Parser.takeWhileP (Just "at rule name") (\t -> t /= '{')
   whitespace
   curlyOpen
   whitespace
   ps <- Parser.someTill (Parser.try prop <|> selector) (char '}')
   whitespace
-  pure $ Selector name ps
+  pure $ AtRule rule (strip name) ps
 
 
 prop :: Parser Value
@@ -61,6 +85,7 @@ propVal =
   <* whitespace
   <* semicolon
   <* whitespace
+
 
 
 semicolon :: Parser ()
