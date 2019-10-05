@@ -2,7 +2,8 @@
 module Lib (run) where
 
 import Control.Applicative hiding (many)
-import Data.Text
+import Data.Text as Text
+import Data.Text.IO as Text
 import Data.Void
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
@@ -12,52 +13,54 @@ type Parser a =
   Parser.Parsec Void Text a
 
 
-data Tree
-  = Node [(Text, [(Text, Text)])] [Tree]
-  | Empty
+data Value
+  = Selector Text [Value]
+  | Prop Text Text
   deriving (Show)
 
 
 run :: IO ()
-run =
-  Parser.parseTest parser " .someFunc { display: block; position: relative;} "
+run = do
+  stylesheet <- Text.readFile "style.scss"
+  print stylesheet
+  Parser.parseTest parser stylesheet
 
 
-parser :: Parser Tree
-parser = do
-  space
-  s <- selector
-  r <- rule
-  pure $ Node [(s, r)] []
+parser :: Parser [Value]
+parser =
+  Parser.someTill selector Parser.atEnd
 
 
-selector :: Parser Text
-selector =
-  Parser.takeWhileP (Just "selector") (\t -> t /= '{' && t /= ' ')
-  <* space
-  <* char '{'
-  <* space
+selector :: Parser Value
+selector = do
+  name <- Parser.takeWhileP (Just "selector") (\t -> t /= '{' && t /= ' ')
+  whitespace
+  curlyOpen
+  whitespace
+  ps <- Parser.someTill (Parser.try prop <|> selector) (char '}')
+  whitespace
+  pure $ Selector name ps
 
 
-rule :: Parser [(Text, Text)]
-rule =
-  Parser.manyTill ((,) <$> prop <*> val) (Parser.eof <|> () <$ char '}')
-
-
-prop :: Parser Text
+prop :: Parser Value
 prop =
+  Prop <$> propName <*> propVal
+
+
+propName :: Parser Text
+propName =
   Parser.takeWhileP (Just "prop") (\t -> t /= ':' && t /= ' ')
-  <* space
+  <* whitespace
   <* colon
-  <* space
+  <* whitespace
 
 
-val :: Parser Text
-val =
-  Parser.takeWhileP (Just "val") (\t -> t /= '}' && t /= ';')
-  <* space
+propVal :: Parser Text
+propVal =
+  Parser.takeWhileP (Just "propVal") (\t -> t /= '}' && t /= ';' && t /= '\n')
+  <* whitespace
   <* semicolon
-  <* space
+  <* whitespace
 
 
 semicolon :: Parser ()
@@ -68,3 +71,18 @@ semicolon =
 colon :: Parser ()
 colon =
   () <$ char ':'
+
+
+curlyOpen :: Parser ()
+curlyOpen =
+  () <$ char '{'
+
+
+curlyClose :: Parser ()
+curlyClose =
+  () <$ char '}'
+
+
+whitespace :: Parser ()
+whitespace =
+  space <|> () <$ eol <|> () <$ newline
