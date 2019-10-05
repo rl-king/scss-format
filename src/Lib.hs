@@ -40,11 +40,12 @@ run = do
       Text.putStrLn (render r)
       putStrLn "\n======\n"
       Print.pPrint r
+      -- Text.writeFile "style.scss" (render r)
 
 
 render :: [Value] -> Text
 render =
-  fst . foldr renderValue ("", 0)
+  Text.strip . fst . foldr renderValue ("", 0)
 
 
 renderValue :: Value -> (Text, Int) -> (Text, Int)
@@ -99,7 +100,7 @@ parser =
 
 selector :: Parser Value
 selector = do
-  name <- Parser.takeWhileP (Just "selector") (\t -> t /= '{')
+  name <- Parser.takeWhileP (Just "selector") (/= '{')
   surround whitespace curlyOpen
   ps <- Parser.someTill (Parser.try prop <|> atRule <|> selector) (char '}')
   whitespace
@@ -109,8 +110,8 @@ selector = do
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ' ')
-  name <- Parser.takeWhileP (Just "at rule name") (\t -> t /= '{')
+  rule <- Parser.takeWhileP (Just "at rule") (/= ' ')
+  name <- Parser.takeWhileP (Just "at rule name") (/= '{')
   surround whitespace curlyOpen
   ps <- Parser.someTill (Parser.try prop <|> selector) (char '}')
   whitespace
@@ -123,9 +124,14 @@ prop =
 
 
 propName :: Parser Text
-propName =
-  Parser.takeWhileP (Just "prop") (\t -> t /= ':' && t /= ' ')
-  <* surround whitespace colon
+propName = do
+  reserved <- optional (Parser.oneOf ['&', '>', '<'])
+  case reserved of
+    Just _ ->
+      empty
+    Nothing ->
+      Parser.takeWhileP (Just "prop") (\t -> t /= ':' && t /= ' ')
+      <* surround whitespace colon
 
 
 propVal :: Parser Text
@@ -162,11 +168,6 @@ colon =
 curlyOpen :: Parser ()
 curlyOpen =
   () <$ char '{'
-
-
-curlyClose :: Parser ()
-curlyClose =
-  () <$ char '}'
 
 
 whitespace :: Parser ()

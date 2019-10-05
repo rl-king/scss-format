@@ -1,56 +1,120 @@
-
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    font-size: 100%;
-}
-
-body {
-    color: $typographyColor;
+button  {
+    cursor: pointer;
+    background-color: transparent;
+    border-radius: 0;
+    border: none;
+    appearance: none;
+    padding: 0;
     font-family: $fontSerif;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.75;
-    overflow-x: hidden;
+    color: currentColor;
+    overflow: visible;
+}
 
+.hamburger {
+    padding: .5rem;
+    position: absolute;
+    top: .75rem;
+    left: 1rem;
 
+    &.is-open {
+        background: transparent;
+        transition: background 0s;
 
-    p {
-        color: red;
-    }
+        .hamburger-layer {
+            transform: rotate(225deg);
+            transition: transform $durationL $durationS $timingFunctionOpen;
 
-    @include breakpoint($medium) {
-        font-size: 1.0625rem;
-    }
+            &:before {
+                top: 0;
+                transition: top $durationS ease-out;
+            }
 
-    @include breakpoint($huge) {
-        font-size: 1.125rem;
-
-        &:hover {
-            color: red;
+            &:after {
+                bottom: 0;
+                transform: rotate(-90deg);
+                transition: bottom $durationS ease-out,
+                            transform $durationL $durationS $timingFunctionOpen;
+            }
         }
     }
 }
 
-@mixin main-wrap {
-    margin: 0 auto;
-    width: 90%;
-    max-width: $maxWidth;
+.hamburger-box {
+    width: 1.5rem;
+    height: $layerHeight * 3 + $layerSpacing * 2;
+    display: inline-block;
+    position: relative;
 }
 
-@mixin main-wrap {
-    margin: 0 auto;
-    width: 90%;
-    max-width: $maxWidth;
+.hamburger-layer {
+    width: 1.5rem;
+    height: $layerHeight;
+    display: block;
+    position: absolute;
+    top: 50%;
+    background: $white;
+    transition: transform $durationL $timingFunctionClose;
+
+    &:before,
+    &:after {
+        content: '';
+        width: inherit;
+        height: inherit;
+        display: block;
+        position: absolute;
+        background: inherit;
+    }
+
+    &:before {
+        top: ($layerSpacing + $layerHeight) * -1;
+        transition: top $durationM $durationL ease-in;
+    }
+
+    &:after {
+        bottom: ($layerSpacing + $layerHeight) * -1;
+        transition: bottom $durationM $durationL ease-in,
+                    transform $durationL $timingFunctionClose;
+    }
 }
 
-@mixin main-margin-left {
-    margin-left: 5%;
+.editable-field-button {
+    margin-top: 2rem;
+    padding-left: 1.5rem;
+    min-height: 2rem;
+    text-align: left;
+    line-height: unset;
+    font-size: unset;
+    position: relative;
+    border-left: .5rem solid $editableColor;
+
+    &:first-child {
+        margin-top: 0;
+    }
+
+    @include breakpoint($small) {
+        padding-left: 2rem;
+    }
+}
+
+.toggle-editable {
+
+
+    background: $editableColor;
+    padding: .5rem;
+    position: fixed;
+    top: 5.5rem;
+    right: 5%;
+    z-index: 2;
 
     @include breakpoint($maxWidth/9*10) {
-        margin-left: calc((#{foo} - #{$maxWidth}) / 2);
+        right: calc((100% - #{$maxWidth}) / 2);
     }
+}
+
+.btn-add,
+.btn-close,
+.btn-remove {
+    padding: .5rem;
+    background: $editableColor;
+    color: $white;
 }
