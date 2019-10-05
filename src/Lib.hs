@@ -147,8 +147,8 @@ prop =
 
 propName :: Parser Text
 propName = do
-  reserved <- optional (Parser.oneOf ['&', '>', '<'])
-  case reserved of
+  maybeCombinator <- optional (Parser.oneOf ['&', '>', '~', '+'])
+  case maybeCombinator of
     Just _ ->
       empty
     Nothing ->
@@ -156,17 +156,19 @@ propName = do
       <* surround whitespace colon
 
 
+
 propVal :: Parser Text
 propVal = do
-  v <- Parser.takeWhileP (Just "propVal") (\t -> t /= '#' && t /= '}' && t /= ';')
+  v <- Parser.takeWhileP (Just "propVal")
+    (\t -> t /= '#' && t /= '}' && t /= '\n' && t /= ';')
   maybeHashVar <- optional hashVar
   case maybeHashVar of
     Nothing -> do
-      surround whitespace semicolon
-      pure v
+      surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
+      pure (Text.strip v)
     Just hashVar' -> do
       v2 <- propVal
-      pure (v <> hashVar' <> v2)
+      pure (Text.strip v <> hashVar' <> Text.strip v2)
 
 
 hashVar :: Parser Text
@@ -190,6 +192,11 @@ colon =
 curlyOpen :: Parser ()
 curlyOpen =
   () <$ char '{'
+
+
+curlyClose :: Parser ()
+curlyClose =
+  () <$ char '}'
 
 
 whitespace :: Parser ()
