@@ -24,6 +24,7 @@ dependencies:
   - megaparsec
   - text
   - pretty-simple
+  - unordered-containers
 
 library:
   source-dirs: src
