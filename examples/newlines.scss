@@ -1,0 +1,16 @@
+
+something {
+    margin: 1rem;
+    padding: 1rem;
+    h1 {margin: 1rem; padding: 1rem;}
+    h2 {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    @include foo();
+    @include foo();
+    @include bar(baz) {margin: 1rem; padding: 1rem;}
+}
+
+
+h1 {color: red;}
