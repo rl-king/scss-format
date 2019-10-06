@@ -125,7 +125,7 @@ parser =
 
 selector :: Parser Value
 selector = do
-  name <- Parser.takeWhileP (Just "selector") (/= '{')
+  name <- Parser.takeWhileP (Just "a selector") (/= '{')
   surround whitespace curlyOpen
   ps <- Parser.manyTill (Parser.try prop <|> atRule <|> selector) (char '}')
   whitespace
@@ -135,8 +135,8 @@ selector = do
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "at rule") (/= ' ')
-  name <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{')
+  rule <- Parser.takeWhileP (Just "a rule") (/= ' ')
+  name <- Parser.takeWhileP (Just "a rule name") (\t -> t /= ';' && t /= '{')
   maybeSemi <- optional semicolon
   case maybeSemi of
     Just _ -> do
@@ -161,15 +161,15 @@ propName = do
     Just _ ->
       empty
     Nothing ->
-      Parser.takeWhileP (Just "prop") (\t -> t /= ':' && t /= ' ')
+      Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
       <* surround whitespace colon
 
 
 
 propVal :: Parser Text
 propVal = do
-  v <- Parser.takeWhileP (Just "propVal")
-    (\t -> t /= '#' && t /= '}' && t /= '\n' && t /= ';')
+  v <- Parser.takeWhileP (Just "a prop value")
+    (\t -> t /= '#' && t /= '}' && t /= ';')
   maybeHashVar <- optional hashVar
   case maybeHashVar of
     Nothing -> do
@@ -184,7 +184,7 @@ hashVar :: Parser Text
 hashVar =
   (\a b c -> a <> b <> c)
   <$> string "#{"
-  <*> Parser.takeWhileP (Just "hashVar") (/= '}')
+  <*> Parser.takeWhileP (Just "a hash var") (/= '}')
   <*> string "}"
 
 
