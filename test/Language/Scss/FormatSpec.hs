@@ -3,6 +3,7 @@ module Language.Scss.FormatSpec where
 
 import Data.Text.IO as Text
 import Language.Scss.Format
+import Language.Scss.Parser
 import System.Directory
 import System.FilePath.Posix
 import Test.Hspec
@@ -26,4 +27,4 @@ spec = do
       <*> pure name
     test (unfo, forma, name) =
       it (name ++ " parse and format") $
-      format unfo `shouldBe` Right forma
+      format <$> parse unfo `shouldBe` Right forma
