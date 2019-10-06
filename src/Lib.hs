@@ -2,7 +2,6 @@
 module Lib (run, dev) where
 
 import Control.Applicative hiding (many)
-import Data.Bifunctor
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as Map
 import qualified Data.List as List
@@ -70,7 +69,6 @@ render :: [Value] -> Text
 render values =
   Text.strip . mconcat $
   List.zipWith (renderValue 0) (Nothing : fmap Just values) values
-
 
 
 renderValueList :: Int -> [Value] -> Text
@@ -225,10 +223,12 @@ propsSorter value =
   case value of
     Prop name _ ->
       fromMaybe 0 (Map.lookup name sortedProps)
+    AtRule _ _ [] ->
+      maxBound - 2
     AtRule _ _ _ ->
-      maxBound - 1
-    Selector _ _ ->
       maxBound
+    Selector _ _ ->
+      maxBound - 1
 
 
 sortedProps :: HashMap Text Int
