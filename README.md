@@ -25,7 +25,7 @@ Compile (and run in case of ghcid) on save
 
 Asumes `ghcid` is installed
 
-`ghcid --command 'stack ghci' --test 'dev --warnings`
+`ghcid --command 'stack ghci' --test 'dev' --warnings`
 
 or
 

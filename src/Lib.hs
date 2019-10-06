@@ -2,9 +2,10 @@
 module Lib (run, dev) where
 
 import Control.Applicative hiding (many)
+import Data.Bifunctor
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as Map
-import Data.List (foldl', sortOn)
+import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -43,7 +44,7 @@ dev = do
       putStrLn "\n======\n"
       Text.putStrLn (render r)
       putStrLn "\n======\n"
-      Print.pPrint r
+      -- Print.pPrint r
 
 
 run :: IO ()
@@ -61,49 +62,59 @@ run = do
           Text.putStrLn (render r)
 
 
+
 -- RENDER
 
 
 render :: [Value] -> Text
-render =
-  Text.strip . fst . foldl' renderValue ("", 0)
+render values =
+  Text.strip . mconcat $
+  List.zipWith (renderValue 0) (Nothing : fmap Just values) values
 
 
-renderValue :: (Text, Int) -> Value -> (Text, Int)
-renderValue (acc, i) value =
-  case value of
+
+renderValueList :: Int -> [Value] -> Text
+renderValueList depth values =
+  mconcat $ List.zipWith
+  (renderValue (depth + 1))
+  (Nothing : fmap Just nestedValues) nestedValues
+  where
+    nestedValues =
+      List.sortOn propsSorter values
+
+
+renderValue :: Int -> Maybe Value -> Value -> Text
+renderValue depth previous current =
+  case current of
     Selector name values ->
-      ( acc
-        <> "\n"
-        <> indent i <> name <> " {\n"
-        <> fst (foldl' renderValue ("", i + 1) (sortOn propsSorter values))
-        <> indent i <> "}\n"
-      , i
-      )
+      addNewLine previous current
+      <> indent depth <> name <> " {\n"
+      <> renderValueList depth values
+      <> indent depth <> "}\n"
     AtRule rule name [] ->
-      ( acc
-        <> "\n"
-        <> indent i <> "@" <> rule <> " " <> name <> ";\n"
-      , i
-      )
+      addNewLine previous current
+      <> indent depth <> "@" <> rule <> " " <> name <> ";\n"
     AtRule rule name values ->
-      ( acc
-        <> "\n"
-        <> indent i
-        <> "@" <> rule <> " " <> name <> " {\n"
-        <> fst (foldl' renderValue ("", i + 1) (sortOn propsSorter values))
-        <> indent i <> "}\n"
-      , i
-      )
+      addNewLine previous current
+      <> indent depth
+      <> "@" <> rule <> " " <> name <> " {\n"
+      <> renderValueList depth values
+      <> indent depth <> "}\n"
     Prop name v ->
-      ( acc <> indent i <> name <> ": " <> v <> ";\n"
-      , i
-      )
+      indent depth <> name <> ": " <> v <> ";\n"
 
 
 indent :: Int -> Text
 indent i =
   Text.replicate i "    "
+
+
+addNewLine :: Maybe Value -> Value -> Text
+addNewLine previous current =
+  case (previous, current) of
+    (Nothing, _) -> ""
+    (Just (AtRule _ _ []), AtRule _ _ []) -> ""
+    _ -> "\n"
 
 
 -- PARSER
@@ -214,7 +225,9 @@ propsSorter value =
   case value of
     Prop name _ ->
       fromMaybe 0 (Map.lookup name sortedProps)
-    _ ->
+    AtRule _ _ _ ->
+      maxBound - 1
+    Selector _ _ ->
       maxBound
 
 
@@ -224,7 +237,7 @@ sortedProps =
     addIndex (acc, i) x =
       ((x, i) : acc, i + 1)
   in
-  Map.fromList . fst $ foldl' addIndex ([], 0)
+  Map.fromList . fst $ List.foldl' addIndex ([], 0)
   [
     "align-content"
   , "align-items"
