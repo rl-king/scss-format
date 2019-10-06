@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib (run, dev) where
+module Lib (dev, format, run) where
 
 import Control.Applicative hiding (many)
 import Data.HashMap.Strict (HashMap)
@@ -36,14 +36,14 @@ data Value
 dev :: IO ()
 dev = do
   stylesheet <- Text.readFile "style.scss"
-  case Parser.runParser parser "" stylesheet of
+  case format stylesheet of
     Left e ->
-      putStrLn $ Parser.errorBundlePretty e
+      Text.putStrLn e
     Right r -> do
       putStrLn "\n======\n"
-      Text.putStrLn (render r)
+      Text.putStrLn r
       putStrLn "\n======\n"
-      -- Print.pPrint r
+      Print.pPrint r
 
 
 run :: IO ()
@@ -54,12 +54,20 @@ run = do
       putStrLn "Filepath is missing, I'm expecting and argument like 'style.scss'"
     f:_ -> do
       stylesheet <- Text.readFile f
-      case Parser.runParser parser "" stylesheet of
+      case format stylesheet of
         Left e ->
-          putStrLn $ Parser.errorBundlePretty e
+          Text.putStrLn e
         Right r ->
-          Text.putStrLn (render r)
+          Text.putStrLn r
 
+
+format :: Text -> Either Text Text
+format input =
+  case Parser.runParser parser "" input of
+    Left e ->
+      Left . Text.pack $ Parser.errorBundlePretty e
+    Right r ->
+      Right $ render r
 
 
 -- RENDER
@@ -67,8 +75,7 @@ run = do
 
 render :: [Value] -> Text
 render values =
-  Text.strip . mconcat $
-  List.zipWith (renderValue 0) (Nothing : fmap Just values) values
+  mconcat $ List.zipWith (renderValue 0) (Nothing : fmap Just values) values
 
 
 renderValueList :: Int -> [Value] -> Text

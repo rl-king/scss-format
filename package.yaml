@@ -49,4 +49,8 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - directory
+    - filepath
+    - hspec
+    - text
     - scss-format
