@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module LibSpec where
+module Language.Scss.FormatSpec where
 
 import Data.Text (Text)
 import Data.Text.IO as Text
-import Lib
+import Language.Scss.Format
 import System.Directory
 import System.FilePath.Posix
 import Test.Hspec
