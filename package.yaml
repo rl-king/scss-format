@@ -22,8 +22,9 @@ description:         Please see the README on GitHub at <https://github.com/rl-k
 dependencies:
   - base >= 4.7 && < 5
   - megaparsec
-  - text
+  - optparse-applicative
   - pretty-simple
+  - text
   - unordered-containers
 
 library:

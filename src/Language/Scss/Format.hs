@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Language.Scss.Format
-  ( dev
-  , format
-  , run
+  ( format
   ) where
 
 import Data.HashMap.Strict (HashMap)
@@ -11,54 +9,11 @@ import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
 import Language.Scss.Parser as Parser
-import System.Environment
-import qualified Text.Pretty.Simple as Print
 
 
-dev :: IO ()
-dev = do
-  stylesheet <- Text.readFile "style.scss"
-  case format stylesheet of
-    Left e ->
-      Text.putStrLn e
-    Right r -> do
-      putStrLn "\n======\n"
-      Text.putStrLn r
-      putStrLn "\n======\n"
-      Print.pPrint r
-
-
-run :: IO ()
-run = do
-  args <- getArgs
-  case args of
-    [] ->
-      putStrLn "Filepath is missing, I'm expecting and argument like 'style.scss'"
-    f:_ -> do
-      stylesheet <- Text.readFile f
-      case format stylesheet of
-        Left e ->
-          Text.putStrLn e
-        Right r ->
-          Text.putStrLn r
-
-
-format :: Text -> Either Text Text
-format input =
-  case Parser.parse input of
-    Left e ->
-      Left $ Text.pack e
-    Right r ->
-      Right $ render r
-
-
--- RENDER
-
-
-render :: [Value] -> Text
-render values =
+format :: [Value] -> Text
+format values =
   mconcat $ List.zipWith (renderValue 0) (Nothing : fmap Just values) values
 
 
