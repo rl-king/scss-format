@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/rl-king/scss-format.svg?branch=master)](https://travis-ci.org/rl-king/scss-format)
 # scss-format
 
 An opinionated scss formatter
