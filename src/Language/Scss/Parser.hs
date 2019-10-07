@@ -24,7 +24,7 @@ data Value
   | AtRule Text Text [Value]
   | Prop Text Text
   | Variable Text Text
-  | MultilineComment Text Text
+  | MultilineComment Text
   | Comment Text
   deriving (Show)
 
@@ -126,9 +126,8 @@ multilineComment = do
     Nothing ->
       multilineComment
     Just _ -> do
-      ws <- Parser.takeWhileP
-        (Just "space or newline") (\t -> t == ' ' || t == '\n')
-      pure (MultilineComment c ws)
+      whitespace
+      pure (MultilineComment c)
 
 
 comment :: Parser Value

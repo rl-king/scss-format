@@ -31,18 +31,18 @@ renderValue :: Int -> Maybe Value -> Value -> Text
 renderValue depth previous current =
   case current of
     Selector name values ->
-      addNewLine previous current
+      addNewLine depth previous current
       <> indent depth <> name <> " {"
       <> newline
       <> renderValueList depth values
       <> indent depth <> "}"
       <> newline
     AtRule rule name [] ->
-      addNewLine previous current
+      addNewLine depth previous current
       <> indent depth <> "@" <> rule <> " " <> name <> ";"
       <> newline
     AtRule rule name values ->
-      addNewLine previous current
+      addNewLine depth previous current
       <> indent depth
       <> "@" <> rule <> " " <> name <> " {"
       <> newline
@@ -52,12 +52,14 @@ renderValue depth previous current =
     Prop name v ->
       indent depth <> name <> ": " <> v <> ";" <> newline
     Variable name v ->
-      indent depth <> "$" <> name <> ": " <> v <> ";" <> newline
-    MultilineComment comment _ ->
-      addNewLine previous current
+      addNewLine depth previous current
+      <> indent depth <> "$" <> name <> ": " <> v <> ";" <> newline
+    MultilineComment comment ->
+      addNewLine depth previous current
       <> indent depth <> "/*" <> comment <> "*/" <> newline
     Comment comment ->
-      indent depth <> "//" <> comment <> newline
+      addNewLine depth previous current
+      <> indent depth <> "//" <> comment <> newline
 
 
 newline :: Text
@@ -70,11 +72,19 @@ indent i =
   Text.replicate i "    "
 
 
-addNewLine :: Maybe Value -> Value -> Text
-addNewLine previous current =
+addNewLine :: Int -> Maybe Value -> Value -> Text
+addNewLine depth previous current =
   case (previous, current) of
     (Nothing, _) -> mempty
     (Just (AtRule _ _ []), AtRule _ _ []) -> mempty
+    (Just (Variable _ _), Variable _ _) -> mempty
+    (_, Comment _)
+      | depth == 0 -> newline <> newline
+      | depth /= 0 -> mempty
+      | otherwise -> newline
+    (_, MultilineComment _)
+      | depth == 0 -> newline <> newline
+      | otherwise -> newline
     _ -> newline
 
 
@@ -91,7 +101,7 @@ propsSorter value =
       maxBound
     Selector _ _ ->
       maxBound - 1
-    MultilineComment _ _ ->
+    MultilineComment _ ->
       0
     Comment _ ->
       0
