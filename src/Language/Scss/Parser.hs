@@ -23,6 +23,7 @@ data Value
   = Selector Text [Value]
   | AtRule Text Text [Value]
   | Prop Text Text
+  | Comment Text Text
   deriving (Show)
 
 
@@ -33,14 +34,14 @@ parse =
 
 parser :: Parser [Value]
 parser =
-  Parser.manyTill (atRule <|> selector) Parser.eof
+  Parser.manyTill (multilineComment <|> atRule <|> selector) Parser.eof
 
 
 selector :: Parser Value
 selector = do
   name <- Parser.takeWhileP (Just "a selector") (/= '{')
   surround whitespace curlyOpen
-  ps <- Parser.manyTill (Parser.try prop <|> atRule <|> selector) (char '}')
+  ps <- Parser.manyTill (multilineComment <|> Parser.try prop <|> atRule <|> selector) (char '}')
   whitespace
   pure $ Selector (Text.strip name) ps
 
@@ -57,7 +58,7 @@ atRule = do
       pure $ AtRule rule (Text.strip name) []
     Nothing -> do
       surround whitespace curlyOpen
-      ps <- Parser.manyTill (Parser.try prop <|> selector) (char '}')
+      ps <- Parser.manyTill (multilineComment <|> Parser.try prop <|> atRule <|> selector) (char '}')
       whitespace
       pure $ AtRule rule (Text.strip name) ps
 
@@ -78,7 +79,6 @@ propName = do
       <* surround whitespace colon
 
 
-
 propVal :: Parser Text
 propVal = do
   v <- Parser.takeWhileP (Just "a prop value")
@@ -96,9 +96,23 @@ propVal = do
 hashVar :: Parser Text
 hashVar =
   (\a b c -> a <> b <> c)
-  <$> string "#{"
+  <$> Parser.chunk "#{"
   <*> Parser.takeWhileP (Just "a hash var") (/= '}')
-  <*> string "}"
+  <*> Parser.chunk "}"
+
+
+multilineComment :: Parser Value
+multilineComment = do
+  _ <- Parser.chunk "/*"
+  c <- Parser.takeWhileP (Just "a comment") (/= '*')
+  closing <- optional (Parser.chunk "*/")
+  case closing of
+    Nothing ->
+      multilineComment
+    Just _ -> do
+      ws <- Parser.takeWhileP
+        (Just "space or newline") (\t -> t == ' ' || t == '\n')
+      pure (Comment c ws)
 
 
 semicolon :: Parser ()

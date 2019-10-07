@@ -46,6 +46,8 @@ renderValue depth previous current =
       <> indent depth <> "}\n"
     Prop name v ->
       indent depth <> name <> ": " <> v <> ";\n"
+    Comment comment _ ->
+      indent depth <> "/*" <> comment <> "*/\n"
 
 
 indent :: Int -> Text
@@ -72,6 +74,8 @@ propsSorter value =
       maxBound
     Selector _ _ ->
       maxBound - 1
+    Comment _ _ ->
+      0
 
 
 sortedProps :: HashMap Text Int

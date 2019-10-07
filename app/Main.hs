@@ -117,12 +117,12 @@ parseFilepath =
 
 dev :: IO ()
 dev = do
-  stylesheet <- Text.readFile "style.scss"
-  case Format.format <$> Parser.parse stylesheet of
+  input <- Text.readFile "style.scss"
+  case Parser.parse input of
     Left e ->
       putStrLn e
     Right r -> do
       putStrLn "\n======\n"
-      Text.putStrLn r
+      Text.putStrLn (Format.format r)
       putStrLn "\n======\n"
       Print.pPrint r
