@@ -40,11 +40,7 @@ parser =
 selector :: Parser Value
 selector = do
   name <- Parser.takeWhileP (Just "a selector") (/= '{')
-  surround whitespace curlyOpen
-  ps <- Parser.manyTill (multilineComment <|> Parser.try prop <|> atRule <|> selector) (char '}')
-  whitespace
-  pure $ Selector (Text.strip name) ps
-
+  Selector (Text.strip name) <$> nestedValues
 
 atRule :: Parser Value
 atRule = do
@@ -56,11 +52,15 @@ atRule = do
     Just _ -> do
       whitespace
       pure $ AtRule rule (Text.strip name) []
-    Nothing -> do
-      surround whitespace curlyOpen
-      ps <- Parser.manyTill (multilineComment <|> Parser.try prop <|> atRule <|> selector) (char '}')
-      whitespace
-      pure $ AtRule rule (Text.strip name) ps
+    Nothing ->
+      AtRule rule (Text.strip name) <$> nestedValues
+
+
+nestedValues :: Parser [Value]
+nestedValues =
+  surround whitespace curlyOpen *>
+  Parser.manyTill (multilineComment <|> Parser.try prop <|> atRule <|> selector) (char '}')
+  <* whitespace
 
 
 prop :: Parser Value
