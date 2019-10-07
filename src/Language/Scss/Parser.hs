@@ -99,20 +99,20 @@ propVal :: Parser Text
 propVal = do
   v <- Parser.takeWhileP (Just "a prop value")
     (\t -> t /= '#' && t /= '}' && t /= ';')
-  maybeHashVar <- optional hashVar
-  case maybeHashVar of
+  isHash <- optional (char '#')
+  case isHash of
     Nothing -> do
       surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
       pure (Text.strip v)
-    Just hashVar' -> do
-      v2 <- propVal
-      pure (Text.strip v <> hashVar' <> Text.strip v2)
+    Just _ -> do
+      rest <- (mappend <$> hashVar <*> propVal) <|> propVal
+      pure (Text.strip v <> "#" <> rest)
 
 
 hashVar :: Parser Text
 hashVar =
   (\a b c -> a <> b <> c)
-  <$> Parser.chunk "#{"
+  <$> Parser.chunk "{"
   <*> Parser.takeWhileP (Just "a hash var") (/= '}')
   <*> Parser.chunk "}"
 
