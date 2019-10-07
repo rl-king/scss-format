@@ -51,8 +51,11 @@ renderValue depth previous current =
       <> newline
     Prop name v ->
       indent depth <> name <> ": " <> v <> ";" <> newline
+    Variable name v ->
+      indent depth <> "$" <> name <> ": " <> v <> ";" <> newline
     MultilineComment comment _ ->
-      indent depth <> "/*" <> comment <> "*/" <> newline
+      addNewLine previous current
+      <> indent depth <> "/*" <> comment <> "*/" <> newline
     Comment comment ->
       indent depth <> "//" <> comment <> newline
 
@@ -80,6 +83,8 @@ propsSorter value =
   case value of
     Prop name _ ->
       fromMaybe 0 (Map.lookup name sortedProps)
+    Variable _ _ ->
+      -2
     AtRule _ _ [] ->
       -1
     AtRule{} ->

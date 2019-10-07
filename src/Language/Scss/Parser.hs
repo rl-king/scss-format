@@ -23,6 +23,7 @@ data Value
   = Selector Text [Value]
   | AtRule Text Text [Value]
   | Prop Text Text
+  | Variable Text Text
   | MultilineComment Text Text
   | Comment Text
   deriving (Show)
@@ -38,7 +39,7 @@ parser =
   Parser.manyTill
   (multilineComment
    <|> comment
-   <|> Parser.try prop
+   <|> Parser.try propOrVar
    <|> atRule
    <|> selector
   ) Parser.eof
@@ -70,15 +71,16 @@ nestedValues =
   Parser.manyTill
     (multilineComment
      <|> comment
-     <|> Parser.try prop
+     <|> Parser.try propOrVar
      <|> atRule
      <|> selector
     ) (char '}')
   <* whitespace
 
 
-prop :: Parser Value
-prop =
+propOrVar :: Parser Value
+propOrVar =
+  Variable <$> (dollar *> propName) <*> propVal <|>
   Prop <$> propName <*> propVal
 
 
@@ -155,6 +157,11 @@ curlyOpen =
 curlyClose :: Parser ()
 curlyClose =
   () <$ char '}'
+
+
+dollar :: Parser ()
+dollar =
+  () <$ char '$'
 
 
 whitespace :: Parser ()
