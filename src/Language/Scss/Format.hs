@@ -32,22 +32,34 @@ renderValue depth previous current =
   case current of
     Selector name values ->
       addNewLine previous current
-      <> indent depth <> name <> " {\n"
+      <> indent depth <> name <> " {"
+      <> newline
       <> renderValueList depth values
-      <> indent depth <> "}\n"
+      <> indent depth <> "}"
+      <> newline
     AtRule rule name [] ->
       addNewLine previous current
-      <> indent depth <> "@" <> rule <> " " <> name <> ";\n"
+      <> indent depth <> "@" <> rule <> " " <> name <> ";"
+      <> newline
     AtRule rule name values ->
       addNewLine previous current
       <> indent depth
-      <> "@" <> rule <> " " <> name <> " {\n"
+      <> "@" <> rule <> " " <> name <> " {"
+      <> newline
       <> renderValueList depth values
-      <> indent depth <> "}\n"
+      <> indent depth <> "}"
+      <> newline
     Prop name v ->
-      indent depth <> name <> ": " <> v <> ";\n"
-    Comment comment _ ->
-      indent depth <> "/*" <> comment <> "*/\n"
+      indent depth <> name <> ": " <> v <> ";" <> newline
+    MultilineComment comment _ ->
+      indent depth <> "/*" <> comment <> "*/" <> newline
+    Comment comment ->
+      indent depth <> "//" <> comment <> newline
+
+
+newline :: Text
+newline =
+  "\n"
 
 
 indent :: Int -> Text
@@ -58,9 +70,9 @@ indent i =
 addNewLine :: Maybe Value -> Value -> Text
 addNewLine previous current =
   case (previous, current) of
-    (Nothing, _) -> ""
-    (Just (AtRule _ _ []), AtRule _ _ []) -> ""
-    _ -> "\n"
+    (Nothing, _) -> mempty
+    (Just (AtRule _ _ []), AtRule _ _ []) -> mempty
+    _ -> newline
 
 
 propsSorter :: Value -> Int
@@ -74,7 +86,9 @@ propsSorter value =
       maxBound
     Selector _ _ ->
       maxBound - 1
-    Comment _ _ ->
+    MultilineComment _ _ ->
+      0
+    Comment _ ->
       0
 
 
