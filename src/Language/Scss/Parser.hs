@@ -38,6 +38,7 @@ parser =
   Parser.manyTill
   (multilineComment
    <|> comment
+   <|> Parser.try prop
    <|> atRule
    <|> selector
   ) Parser.eof
