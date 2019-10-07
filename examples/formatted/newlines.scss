@@ -1,23 +1,22 @@
 something {
-    margin: 1rem;
+    @include foo();
+    @include foo();
     padding: 1rem;
-
-    @include foo();
-    @include foo();
+    margin: 1rem;
 
     h1 {
-        margin: 1rem;
         padding: 1rem;
+        margin: 1rem;
     }
 
     h2 {
-        margin: 1rem;
         padding: 1rem;
+        margin: 1rem;
     }
 
     @include bar(baz) {
-        margin: 1rem;
         padding: 1rem;
+        margin: 1rem;
     }
 }
 
