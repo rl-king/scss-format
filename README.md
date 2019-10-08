@@ -10,7 +10,7 @@ An opinionated scss formatter
 * a single newline inbetween at properties and at-rules
 * sort properties
 
-## Install
+## Install executable
 
 Asumes `haskell-stack` is installed
 
@@ -18,6 +18,19 @@ Asumes `haskell-stack` is installed
 2. cd into directory
 3. stack install
 4. scss-format 'filename.scss'
+
+
+## Install (spac)emacs
+
+Install [reformatter](https://github.com/purcell/reformatter.el) and add the following to your config:
+``` elisp
+(reformatter-define scss-format
+  :program "scss-format"
+  :args '("--stdin")
+  :lighter " SCSSF")
+```
+
+Enable format on save by adding `(add-hook 'scss-mode-hook 'scss-format-on-save-mode)` to your config as well.
 
 ## Develop
 
