@@ -5,11 +5,14 @@ module Main
   ) where
 
 import Control.Monad (when)
+import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Language.Scss.Format as Format
 import qualified Language.Scss.Parser as Parser
 import Options.Applicative as Options
 import Prelude hiding (log)
+import System.Exit
+import System.IO
 import qualified Text.Pretty.Simple as Print
 
 
@@ -18,25 +21,30 @@ import qualified Text.Pretty.Simple as Print
 
 main :: IO ()
 main = do
-  args@Args{_aFilepath, _aVerbose, _aOverwrite, _aVerify} <- parseOptions
+  args@Args{_aSource, _aVerbose, _aOverwrite, _aVerify} <- parseOptions
   when _aVerbose (logP "Command line arguments" args)
-  input <- Text.readFile _aFilepath
-  when _aVerbose (log "Input" input)
+  input <-
+    case _aSource of
+      FilePath path -> Text.readFile path
+      StdIn -> Text.getContents
+  when _aVerbose (log "Input" (Text.unpack input))
   case Parser.parse input of
-    Left err ->
-      log "Parse error" err
+    Left err -> do
+      hPutStrLn stderr err
+      exitFailure
     Right result -> do
       let formatted = Format.format result
       when _aVerbose (logP "Parse result" result)
-      if _aVerify
-        then log "Is formatted" (input == formatted)
-        else if _aOverwrite
-             then Text.writeFile _aFilepath formatted
-             else Text.putStrLn formatted
+      when _aVerify (log "Is formatted" (show (input == formatted)))
+      case (_aSource, _aOverwrite) of
+        (FilePath path, True) ->
+          Text.writeFile path formatted
+        _ ->
+          Text.putStrLn formatted
   where
     log title x = do
       putStrLn $ "-- " <> title
-      print x
+      putStrLn x
     logP title x = do
       putStrLn $ "-- " <> title
       Print.pPrintNoColor x
@@ -45,12 +53,18 @@ main = do
 -- ARGS
 
 
+data Source
+  = FilePath String
+  | StdIn
+  deriving (Show)
+
+
 data Args =
   Args
   { _aVerbose :: !Bool
   , _aOverwrite :: !Bool
   , _aVerify :: !Bool
-  , _aFilepath :: !String
+  , _aSource :: !Source
   } deriving (Show)
 
 
@@ -73,7 +87,7 @@ parser =
   <$> parseVerbose
   <*> parseOverwrite
   <*> parseVerify
-  <*> parseFilepath
+  <*> parseSource
 
 
 parseVerbose :: Parser Bool
@@ -103,13 +117,25 @@ parseVerify =
   <> help "Test if file is correctly formatted"
 
 
+parseSource :: Parser Source
+parseSource =
+  (StdIn <$ parseStdIn) <|> (FilePath <$> parseFilepath)
+
+
 parseFilepath :: Parser String
 parseFilepath =
   strOption $
-  long "input"
-  <> short 'i'
-  <> metavar "INPUT"
+  long "p"
+  <> short 'p'
+  <> metavar "PATH"
   <> help "Path to a scss file"
+
+
+parseStdIn :: Parser Bool
+parseStdIn =
+  switch $
+  long "stdin"
+  <> help "Read from stdin"
 
 
 -- DEV

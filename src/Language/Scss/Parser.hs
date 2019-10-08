@@ -74,7 +74,7 @@ nestedValues =
      <|> Parser.try propOrVar
      <|> atRule
      <|> selector
-    ) (char '}')
+    ) curlyClose
   <* whitespace
 
 
