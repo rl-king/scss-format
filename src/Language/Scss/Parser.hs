@@ -67,7 +67,7 @@ selector = do
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "a rule") (/= ' ')
+  rule <- Parser.takeWhileP (Just "a rule") (\t -> t /= ';' && t /= ' ')
   name <- Parser.takeWhileP (Just "a rule name") (\t -> t /= ';' && t /= '{')
   maybeSemi <- optional semicolon
   case maybeSemi of
@@ -99,10 +99,10 @@ propVal = do
   case isHash of
     Nothing -> do
       surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
-      pure (Text.strip v)
+      pure (Text.stripEnd v)
     Just _ -> do
       rest <- (mappend <$> hashVar <*> propVal) <|> propVal
-      pure (Text.strip v <> "#" <> rest)
+      pure (Text.stripStart v <> "#" <> rest)
 
 
 hashVar :: Parser Text
