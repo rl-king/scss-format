@@ -36,18 +36,31 @@ parse =
 
 parser :: Parser [Value]
 parser =
-  Parser.manyTill
-  (multilineComment
-   <|> comment
-   <|> Parser.try propOrVar
-   <|> atRule
-   <|> selector
-  ) Parser.eof
+  values Parser.eof
+
+
+values :: Parser () -> Parser [Value]
+values =
+  Parser.manyTill $
+    multilineComment
+     <|> comment
+     <|> Parser.try atRule
+     <|> Parser.try selector
+     <|> propOrVar
+
+
+nestedValues :: Parser [Value]
+nestedValues =
+  surround whitespace curlyOpen
+  *> values curlyClose
+  <* whitespace
 
 
 selector :: Parser Value
 selector = do
-  name <- Parser.takeWhileP (Just "a selector") (/= '{')
+  name <- Parser.takeWhileP (Just "a selector")
+    (\t -> t /= '{' && t /= ';' && t /= '}')
+  Parser.notFollowedBy (Parser.oneOf [';', '}'])
   Selector (Text.strip name) <$> nestedValues
 
 
@@ -65,19 +78,6 @@ atRule = do
       AtRule rule (Text.strip name) <$> nestedValues
 
 
-nestedValues :: Parser [Value]
-nestedValues =
-  surround whitespace curlyOpen *>
-  Parser.manyTill
-    (multilineComment
-     <|> comment
-     <|> Parser.try propOrVar
-     <|> atRule
-     <|> selector
-    ) curlyClose
-  <* whitespace
-
-
 propOrVar :: Parser Value
 propOrVar =
   Variable <$> (dollar *> propName) <*> propVal <|>
@@ -86,13 +86,9 @@ propOrVar =
 
 propName :: Parser Text
 propName = do
-  maybeCombinator <- optional (Parser.oneOf ['&', '>', '~', '+'])
-  case maybeCombinator of
-    Just _ ->
-      empty
-    Nothing ->
-      Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
-      <* surround whitespace colon
+  Parser.notFollowedBy (Parser.oneOf ['&', '>', '~', '+'])
+  Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
+    <* surround whitespace colon
 
 
 propVal :: Parser Text
