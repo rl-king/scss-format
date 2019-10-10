@@ -60,7 +60,7 @@ selector :: Parser Value
 selector = do
   name <- Parser.takeWhileP (Just "a selector")
     (\t -> t /= '{' && t /= ';' && t /= '}')
-  Parser.notFollowedBy (Parser.oneOf [';', '}'])
+  Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
   Selector (Text.strip name) <$> nestedValues
 
 
@@ -86,7 +86,8 @@ propOrVar =
 
 propName :: Parser Text
 propName = do
-  Parser.notFollowedBy (Parser.oneOf ['&', '>', '~', '+'])
+  Parser.notFollowedBy
+    (Parser.satisfy (\t -> t == '&' || t == '>' || t == '~' || t == '+'))
   Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
     <* surround whitespace colon
 
