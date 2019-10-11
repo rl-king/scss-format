@@ -5,10 +5,11 @@ An opinionated scss formatter
 
 ## Style
 
+* Sort properties
 * Indent four spaces
-* a single newline after selector
-* a single newline inbetween at properties and at-rules
-* sort properties
+* A single newline inbetween selector
+* A newlines around top level comments
+* Add closing `;` to last property
 
 ## Install executable
 
