@@ -9,15 +9,19 @@ import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Data.Text.Lazy (toStrict)
+import Data.Text.Lazy.Builder (Builder)
+import qualified Data.Text.Lazy.Builder as B
 import Language.Scss.Parser as Parser
 
 
 format :: [Value] -> Text
 format values =
-  mconcat $ List.zipWith (renderValue 0) (Nothing : fmap Just values) values
+  toStrict . B.toLazyText . mconcat
+  $ List.zipWith (renderValue 0) (Nothing : fmap Just values) values
 
 
-renderValueList :: Int -> [Value] -> Text
+renderValueList :: Int -> [Value] -> Builder
 renderValueList depth values =
   mconcat $ List.zipWith
   (renderValue (depth + 1))
@@ -27,52 +31,63 @@ renderValueList depth values =
       List.sortOn propsSorter values
 
 
-renderValue :: Int -> Maybe Value -> Value -> Text
+renderValue :: Int -> Maybe Value -> Value -> Builder
 renderValue depth previous current =
   case current of
     Selector name values ->
       addNewLine depth previous current
-      <> indent depth <> name <> " {"
+      <> indent depth <> B.fromText name <> " {"
       <> newline
       <> renderValueList depth values
-      <> indent depth <> "}"
+      <> indent depth
+      <> "}"
       <> newline
     AtRule rule name [] ->
       addNewLine depth previous current
-      <> indent depth <> "@" <> rule <> " " <> name <> ";"
+      <> indent depth
+      <> "@" <> B.fromText rule <> " " <> B.fromText name <> ";"
       <> newline
     AtRule rule name values ->
       addNewLine depth previous current
       <> indent depth
-      <> "@" <> rule <> " " <> name <> " {"
+      <> "@" <> B.fromText rule <> " " <> B.fromText name <> " {"
       <> newline
       <> renderValueList depth values
-      <> indent depth <> "}"
+      <> indent depth
+      <> "}"
       <> newline
     Prop name v ->
-      indent depth <> name <> ": " <> v <> ";" <> newline
+      indent depth
+      <> B.fromText name <> ": " <> B.fromText v <> ";"
+      <> newline
     Variable name v ->
       addNewLine depth previous current
-      <> indent depth <> "$" <> name <> ": " <> v <> ";" <> newline
+      <> indent depth
+      <> "$" <> B.fromText name <> ": " <> B.fromText v <> ";"
+      <> newline
     MultilineComment comment ->
       addNewLine depth previous current
-      <> indent depth <> "/*" <> comment <> "*/" <> newline
+      <> indent depth
+      <> "/*" <> B.fromText comment <> "*/"
+      <> newline
     Comment comment ->
       addNewLine depth previous current
-      <> indent depth <> "//" <> comment <> newline
+      <> indent depth
+      <> "//" <> B.fromText comment
+      <> newline
 
 
-newline :: Text
+newline :: Builder
 newline =
-  "\n"
+  B.singleton '\n'
 
 
-indent :: Int -> Text
+indent :: Int -> Builder
 indent i =
-  Text.replicate i "    "
+  B.fromText $ Text.replicate i "    "
 
 
-addNewLine :: Int -> Maybe Value -> Value -> Text
+addNewLine :: Int -> Maybe Value -> Value -> Builder
 addNewLine depth previous current =
   case (previous, current) of
     (Nothing, _) -> mempty

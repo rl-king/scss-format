@@ -41,6 +41,21 @@ executables:
     dependencies:
     - scss-format
 
+benchmarks:
+  scss-format-benchmarks:
+    source-dirs: bench
+    main: Main.hs
+    dependencies:
+    - base
+    - text
+    - scss-format
+    - criterion
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
+    - -O2
+
 tests:
   scss-format-test:
     main:                Spec.hs
