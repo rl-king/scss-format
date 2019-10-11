@@ -11,6 +11,57 @@ An opinionated scss formatter
 * Add newlines around top level comments
 * Add closing `;` to last property if missing
 
+
+<table><thead><tr><th>Before</th><th>After</th></tr></thead><tbody><tr><td>
+
+```scss
+// PAGE
+.page {
+    margin: 1rem;
+
+    @include breakpoint($small) {
+        padding: 1rem;
+
+
+         .body-text {padding-left: 1.5rem;}
+    }
+
+
+    padding: 1rem;
+
+    h4 {
+        margin: .5em 0 .25em;
+        font-size: 1em
+    }
+}
+```
+
+</td><td>
+
+```scss
+// PAGE
+
+.page {
+    padding: 1rem;
+    margin: 1rem;
+
+    h4 {
+        margin: .5em 0 .25em;
+        font-size: 1em;
+    }
+
+    @include breakpoint($small) {
+        padding: 1rem;
+
+        .body-text {
+            padding-left: 1.5rem;
+        }
+    }
+}
+```
+
+</td></tr> </tbody></table>
+
 ## Install executable
 
 Asumes `haskell-stack` is installed
