@@ -125,7 +125,7 @@ parseSource =
 parseFilepath :: Parser String
 parseFilepath =
   strOption $
-  long "p"
+  long "path"
   <> short 'p'
   <> metavar "PATH"
   <> help "Path to a scss file"

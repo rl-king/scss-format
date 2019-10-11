@@ -7,9 +7,9 @@ An opinionated scss formatter
 
 * Sort properties
 * Indent four spaces
-* A single newline inbetween selector
-* A newlines around top level comments
-* Add closing `;` to last property
+* A single newline inbetween selectors
+* Add newlines around top level comments
+* Add closing `;` to last property if missing
 
 ## Install executable
 
@@ -18,7 +18,7 @@ Asumes `haskell-stack` is installed
 1. clone repository
 2. cd into directory
 3. stack install
-4. scss-format 'filename.scss'
+4. scss-format --path './style.scss'
 
 
 ## Install (spac)emacs
@@ -34,7 +34,6 @@ Install [reformatter](https://github.com/purcell/reformatter.el) and add the fol
 Enable format on save by adding `(add-hook 'scss-mode-hook 'scss-format-on-save-mode)` to your config as well.
 
 ## Develop
-
 
 Compile (and run in case of ghcid) on save
 
