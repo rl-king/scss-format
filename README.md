@@ -11,8 +11,7 @@ An opinionated scss formatter
 * Add newlines around top level comments
 * Add closing `;` to last property if missing
 
-
-<table><thead><tr><th>Before</th><th>After</th></tr></thead><tbody><tr><td>
+### Before
 
 ```scss
 // PAGE
@@ -36,7 +35,7 @@ An opinionated scss formatter
 }
 ```
 
-</td><td>
+### After
 
 ```scss
 // PAGE
@@ -59,8 +58,6 @@ An opinionated scss formatter
     }
 }
 ```
-
-</td></tr> </tbody></table>
 
 ## Install executable
 
