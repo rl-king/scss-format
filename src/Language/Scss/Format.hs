@@ -36,64 +36,44 @@ renderValue depth previous current =
   case current of
     Selector name values ->
       addNewLine depth previous current
-      <> indent depth
-      <> B.fromText name
-      <> B.fromText " {"
+      <> indent depth <> B.fromText name <> " {"
       <> newline
       <> renderValueList depth values
       <> indent depth
-      <> B.singleton '}'
+      <> "}"
       <> newline
     AtRule rule name [] ->
       addNewLine depth previous current
       <> indent depth
-      <> B.singleton '@'
-      <> B.fromText rule
-      <> B.singleton ' '
-      <> B.fromText name
-      <> B.singleton ';'
+      <> "@" <> B.fromText rule <> " " <> B.fromText name <> ";"
       <> newline
     AtRule rule name values ->
       addNewLine depth previous current
       <> indent depth
-      <> B.singleton '@'
-      <> B.fromText rule
-      <> B.singleton ' '
-      <> B.fromText name
-      <> B.fromText " {"
+      <> "@" <> B.fromText rule <> " " <> B.fromText name <> " {"
       <> newline
       <> renderValueList depth values
       <> indent depth
-      <> B.singleton '}'
+      <> "}"
       <> newline
     Prop name v ->
       indent depth
-      <> B.fromText name
-      <> B.fromText ": "
-      <> B.fromText v
-      <> B.singleton ';'
+      <> B.fromText name <> ": " <> B.fromText v <> ";"
       <> newline
     Variable name v ->
       addNewLine depth previous current
       <> indent depth
-      <> B.singleton '$'
-      <> B.fromText name
-      <> B.fromText ": "
-      <> B.fromText v
-      <> B.singleton ';'
+      <> "$" <> B.fromText name <> ": " <> B.fromText v <> ";"
       <> newline
     MultilineComment comment ->
       addNewLine depth previous current
       <> indent depth
-      <> B.fromText "/*"
-      <> B.fromText comment
-      <> B.fromText "*/"
+      <> "/*" <> B.fromText comment <> "*/"
       <> newline
     Comment comment ->
       addNewLine depth previous current
       <> indent depth
-      <> B.fromText "//"
-      <> B.fromText comment
+      <> "//" <> B.fromText comment
       <> newline
 
 
