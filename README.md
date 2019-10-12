@@ -1,9 +1,7 @@
 [![Build Status](https://travis-ci.org/rl-king/scss-format.svg?branch=master)](https://travis-ci.org/rl-king/scss-format)
 # scss-format
 
-An opinionated scss formatter
-
-## Style
+A non-configurable scss formatter
 
 * Sort properties
 * Indent four spaces
@@ -11,7 +9,7 @@ An opinionated scss formatter
 * Add newlines around top level comments
 * Add closing `;` to last property if missing
 
-### Before
+### Unformatted
 
 ```scss
 // PAGE
@@ -26,7 +24,7 @@ An opinionated scss formatter
     }
 
 
-    padding: 1rem;
+    padding: 2rem;
 
     h4 {
         margin: .5em 0 .25em;
@@ -35,7 +33,7 @@ An opinionated scss formatter
 }
 ```
 
-### After
+### Formatted
 
 ```scss
 // PAGE
@@ -50,7 +48,7 @@ An opinionated scss formatter
     }
 
     @include breakpoint($small) {
-        padding: 1rem;
+        padding: 2rem;
 
         .body-text {
             padding-left: 1.5rem;
