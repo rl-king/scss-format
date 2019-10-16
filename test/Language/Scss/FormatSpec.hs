@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Language.Scss.FormatSpec where
 
+import qualified Data.Text as Text
 import Data.Text.IO as Text
 import Language.Scss.Format
 import Language.Scss.Parser
@@ -27,4 +28,4 @@ spec = do
       <*> pure name
     test (unfo, forma, name) =
       it (name ++ " parse and format") $
-      format <$> parse unfo `shouldBe` Right forma
+      format <$> parse unfo `shouldBe` Right (Text.strip forma)

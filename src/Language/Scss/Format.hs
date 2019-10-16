@@ -17,7 +17,7 @@ import Language.Scss.Parser as Parser
 
 format :: [Value] -> Text
 format values =
-  toStrict . B.toLazyText . mconcat
+  Text.strip . toStrict . B.toLazyText . mconcat
   $ List.zipWith (renderValue 0) (Nothing : fmap Just values) values
 
 
