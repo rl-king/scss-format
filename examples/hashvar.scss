@@ -1,1 +1,2 @@
 main {margin: #{foo};}
+main {@foo bar(#{baz}) {margin: 1px;}}

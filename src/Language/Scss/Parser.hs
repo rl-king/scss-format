@@ -68,7 +68,7 @@ atRule :: Parser Value
 atRule = do
   _ <- char '@'
   rule <- Parser.takeWhileP (Just "a rule") (\t -> t /= ';' && t /= ' ')
-  name <- Parser.takeWhileP (Just "a rule name") (\t -> t /= ';' && t /= '{')
+  name <- parseAtRuleName
   maybeSemi <- optional semicolon
   case maybeSemi of
     Just _ -> do
@@ -76,6 +76,18 @@ atRule = do
       pure $ AtRule rule (Text.strip name) []
     Nothing ->
       AtRule rule (Text.strip name) <$> nestedValues
+
+
+parseAtRuleName :: Parser Text
+parseAtRuleName = do
+  v1 <- Parser.takeWhileP (Just "a rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
+  maybeHash <- optional (Parser.chunk "#{")
+  case maybeHash of
+    Just hash -> do
+      v2 <- parseAtRuleName
+      pure (v1 <> hash <> v2)
+    Nothing ->
+      pure v1
 
 
 propOrVar :: Parser Value
