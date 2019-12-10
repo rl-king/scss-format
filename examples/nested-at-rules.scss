@@ -2,5 +2,6 @@ body {
  @include something();
  @include something(foo) {
      padding: 1rem;
+     @content ;
  }
 }
