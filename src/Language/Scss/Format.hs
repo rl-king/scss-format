@@ -45,7 +45,9 @@ renderValue depth previous current =
     AtRule rule name [] ->
       addNewLine depth previous current
       <> indent depth
-      <> "@" <> B.fromText rule <> " " <> B.fromText name <> ";"
+      <> "@" <> B.fromText rule
+      <> (if Text.null name then mempty else " " <> B.fromText name)
+      <> ";"
       <> newline
     AtRule rule name values ->
       addNewLine depth previous current
