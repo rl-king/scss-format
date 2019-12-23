@@ -5,4 +5,8 @@ body {
         @content;
         padding: 1rem;
     }
+
+    @font-face {
+        font-family: sans;
+    }
 }
