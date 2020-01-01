@@ -109,13 +109,18 @@ propVal = do
   v <- Parser.takeWhileP (Just "a prop value")
     (\t -> t /= '#' && t /= '}' && t /= ';')
   isHash <- optional (char '#')
-  case isHash of
-    Nothing -> do
+  isBase64 <- optional (Parser.chunk ";base64")
+  case (isHash, isBase64) of
+    (Nothing, Nothing)-> do
       surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
       pure (Text.stripEnd v)
-    Just _ -> do
+    (Just _, _) -> do
       rest <- (mappend <$> hashVar <*> propVal) <|> propVal
       pure (Text.stripStart v <> "#" <> rest)
+    (_, Just _) -> do
+      rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
+      surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
+      pure (Text.stripEnd v <> ";base64" <> Text.stripEnd rest)
 
 
 hashVar :: Parser Text
