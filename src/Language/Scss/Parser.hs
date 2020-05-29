@@ -34,7 +34,7 @@ parse =
 
 parser :: Parser [Value]
 parser =
-  values Parser.eof
+  whitespace *> values Parser.eof
 
 values :: Parser () -> Parser [Value]
 values =
@@ -63,7 +63,7 @@ selector = do
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "a rule") (\t -> t /= ';' && t /= ' ')
+  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
   name <- parseAtRuleName
   maybeSemi <- optional semicolon
   case maybeSemi of
@@ -75,7 +75,7 @@ atRule = do
 
 parseAtRuleName :: Parser Text
 parseAtRuleName = do
-  v1 <- Parser.takeWhileP (Just "a rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
+  v1 <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
   maybeHash <- optional (Parser.chunk "#{")
   case maybeHash of
     Just hash -> do
