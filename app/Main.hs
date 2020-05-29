@@ -35,12 +35,15 @@ main = do
     Right result -> do
       let formatted = Format.format result
       when _aVerbose (logP "Parse result" result)
-      when _aVerify (log "Is formatted" (show (input == formatted)))
-      case (_aSource, _aOverwrite) of
-        (FilePath path, True) ->
-          Text.writeFile path formatted
-        _ ->
-          Text.putStrLn formatted
+      if _aVerify
+        then
+          when (Text.strip input /= formatted) $
+            exitWith (ExitFailure 100)
+        else case (_aSource, _aOverwrite) of
+          (FilePath path, True) ->
+            Text.writeFile path formatted
+          _ ->
+            Text.putStrLn formatted
   where
     log title x = do
       putStrLn $ "-- " <> title
