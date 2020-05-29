@@ -1,8 +1,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
+
 module Main
-  ( main
-  , dev
-  ) where
+  ( main,
+    dev,
+  )
+where
 
 import Control.Monad (when)
 import qualified Data.Text as Text
@@ -10,18 +12,16 @@ import qualified Data.Text.IO as Text
 import qualified Language.Scss.Format as Format
 import qualified Language.Scss.Parser as Parser
 import Options.Applicative as Options
-import Prelude hiding (log)
 import System.Exit
 import System.IO
 import qualified Text.Pretty.Simple as Print
-
+import Prelude hiding (log)
 
 -- MAIN
 
-
 main :: IO ()
 main = do
-  args@Args{_aSource, _aVerbose, _aOverwrite, _aVerify} <- parseOptions
+  args@Args {_aSource, _aVerbose, _aOverwrite, _aVerify} <- parseOptions
   when _aVerbose (logP "Command line arguments" args)
   input <-
     case _aSource of
@@ -49,97 +49,84 @@ main = do
       putStrLn $ "-- " <> title
       Print.pPrintNoColor x
 
-
 -- ARGS
-
 
 data Source
   = FilePath String
   | StdIn
   deriving (Show)
 
-
-data Args =
-  Args
-  { _aVerbose :: !Bool
-  , _aOverwrite :: !Bool
-  , _aVerify :: !Bool
-  , _aSource :: !Source
-  } deriving (Show)
-
+data Args = Args
+  { _aVerbose :: !Bool,
+    _aOverwrite :: !Bool,
+    _aVerify :: !Bool,
+    _aSource :: !Source
+  }
+  deriving (Show)
 
 parseOptions :: IO Args
 parseOptions =
   customExecParser (prefs showHelpOnError) $
-  info (parser <**> helper) (fullDesc <> progDesc descr)
+    info (parser <**> helper) (fullDesc <> progDesc descr)
   where
     descr =
       concat
-      [ "Format scss files, "
-      , "prints the result to stdout by default, "
-      , "use '-o' to replace the original file."
-      ]
-
+        [ "Format scss files, ",
+          "prints the result to stdout by default, ",
+          "use '-o' to replace the original file."
+        ]
 
 parser :: Parser Args
 parser =
   Args
-  <$> parseVerbose
-  <*> parseOverwrite
-  <*> parseVerify
-  <*> parseSource
-
+    <$> parseVerbose
+    <*> parseOverwrite
+    <*> parseVerify
+    <*> parseSource
 
 parseVerbose :: Parser Bool
 parseVerbose =
   switch $
-  long "verbose"
-  <> short 'v'
-  <> showDefault
-  <> help "Log a bit"
-
+    long "verbose"
+      <> short 'v'
+      <> showDefault
+      <> help "Log a bit"
 
 parseOverwrite :: Parser Bool
 parseOverwrite =
   switch $
-  long "overwrite"
-  <> short 'o'
-  <> showDefault
-  <> help "Replace the orginal file"
-
+    long "overwrite"
+      <> short 'o'
+      <> showDefault
+      <> help "Replace the orginal file"
 
 parseVerify :: Parser Bool
 parseVerify =
   switch $
-  long "verify"
-  <> short 't'
-  <> showDefault
-  <> help "Test if file is correctly formatted"
-
+    long "verify"
+      <> short 't'
+      <> showDefault
+      <> help "Test if file is correctly formatted"
 
 parseSource :: Parser Source
 parseSource =
   (StdIn <$ parseStdIn) <|> (FilePath <$> parseFilepath)
 
-
 parseFilepath :: Parser String
 parseFilepath =
   strOption $
-  long "path"
-  <> short 'p'
-  <> metavar "PATH"
-  <> help "Path to a scss file"
-
+    long "path"
+      <> short 'p'
+      <> metavar "PATH"
+      <> help "Path to a scss file"
 
 parseStdIn :: Parser Bool
 parseStdIn =
   switch $
-  long "stdin"
-  <> help "Read from stdin"
-
+    long "stdin"
+      <> help "Read from stdin"
 
 -- DEV
-
 
 dev :: IO ()
 dev = do

@@ -1,0 +1,101 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 4f9f0e3220f44f2dfe87a84e4e16549b100e63e09f5df9150c15694d0fe9ed74
+
+name:           scss-format
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/rl-king/scss-format#readme>
+homepage:       https://github.com/rl-king/scss-format#readme
+bug-reports:    https://github.com/rl-king/scss-format/issues
+author:         Ruben Lie King
+maintainer:     hello@rubenlieking.com
+copyright:      2019 Ruben Lie King
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/rl-king/scss-format
+
+library
+  exposed-modules:
+      Language.Scss.Format
+      Language.Scss.Parser
+  other-modules:
+      Paths_scss_format
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , megaparsec
+    , optparse-applicative
+    , pretty-simple
+    , text
+    , unordered-containers
+  default-language: Haskell2010
+
+executable scss-format
+  main-is: Main.hs
+  other-modules:
+      Paths_scss_format
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , megaparsec
+    , optparse-applicative
+    , pretty-simple
+    , scss-format
+    , text
+    , unordered-containers
+  default-language: Haskell2010
+
+test-suite scss-format-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Language.Scss.FormatSpec
+      Paths_scss_format
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+  build-depends:
+      base >=4.7 && <5
+    , directory
+    , filepath
+    , hspec
+    , megaparsec
+    , optparse-applicative
+    , pretty-simple
+    , scss-format
+    , text
+    , unordered-containers
+  default-language: Haskell2010
+
+benchmark scss-format-benchmarks
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_scss_format
+  hs-source-dirs:
+      bench
+  ghc-options: -rtsopts -threaded -with-rtsopts=-N -O2
+  build-depends:
+      base
+    , criterion
+    , megaparsec
+    , optparse-applicative
+    , pretty-simple
+    , scss-format
+    , text
+    , unordered-containers
+  default-language: Haskell2010
