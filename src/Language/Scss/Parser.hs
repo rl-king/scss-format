@@ -15,17 +15,18 @@ import qualified Data.Text as Text
 import Data.Void
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
+import Debug.Trace
 
 type Parser a =
   Parser.Parsec Void Text a
 
 data Value
-  = Selector Text [Value]
-  | AtRule Text Text [Value]
-  | Prop Text Text
-  | Variable Text Text
+  = Selector         Text [Value]
+  | AtRule           Text Text [Value]
+  | Prop             Text Text
+  | Variable         Text Text
   | MultilineComment Text
-  | Comment Text
+  | Comment          Text
   deriving (Show)
 
 parse :: Text -> Either String [Value]
@@ -64,25 +65,25 @@ atRule :: Parser Value
 atRule = do
   _ <- char '@'
   rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
-  name <- parseAtRuleName
+  _ <- char ' '
+  body <- parseAtRuleBody
   maybeSemi <- optional semicolon
   case maybeSemi of
     Just _ -> do
       whitespace
-      pure $ AtRule rule (Text.strip name) []
+      pure $ AtRule rule (Text.strip body) []
     Nothing ->
-      AtRule rule (Text.strip name) <$> nestedValues
+      AtRule rule (Text.strip body) <$> nestedValues
 
-parseAtRuleName :: Parser Text
-parseAtRuleName = do
-  v1 <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
-  maybeHash <- optional (Parser.chunk "#{")
-  case maybeHash of
-    Just hash -> do
-      v2 <- parseAtRuleName
-      pure (v1 <> hash <> v2)
-    Nothing ->
-      pure v1
+parseAtRuleBody :: Parser Text
+parseAtRuleBody = Parser.label "at rule body" $
+  Text.concat <$> Parser.many nameIdents
+      where
+        nameIdents =
+          string "#{"
+          <|> (Text.singleton <$> otherNameIdentChars)
+
+        otherNameIdentChars = Parser.satisfy (\t -> t /= ';' && t /= '{') Parser.<?> "non ';' or '{' (but allow '#{')"
 
 propOrVar :: Parser Value
 propOrVar =
