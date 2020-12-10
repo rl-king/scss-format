@@ -52,13 +52,24 @@ nestedValues =
   curlyOpen *> values curlyClose
 
 selector :: Parser Value
-selector = do
-  name <-
-    Parser.takeWhileP
-      (Just "a selector")
-      (\t -> t /= '{' && t /= ';' && t /= '}')
-  Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
-  Selector (Text.strip name) <$> nestedValues
+selector =
+  let nameParser =
+        Parser.takeWhileP
+          (Just "a selector")
+          (\t -> t /= '#' && t /= '{' && t /= ';' && t /= '}')
+   in do
+        name <- nameParser
+        more <-
+          asum
+            [ do
+                _ <- char '#'
+                rest <- (mappend <$> hashVar <*> nameParser) <|> nameParser
+                pure $ Text.stripStart name <> "#" <> Text.strip rest,
+              do
+                pure $ Text.strip name
+            ]
+        Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
+        Selector more <$> nestedValues
 
 atRule :: Parser Value
 atRule = do
@@ -114,7 +125,7 @@ propVal = do
       ]
 
 hashVar :: Parser Text
-hashVar =
+hashVar = do
   (\a b c -> a <> b <> c)
     <$> Parser.chunk "{"
     <*> Parser.takeWhileP (Just "a hash var") (/= '}')
