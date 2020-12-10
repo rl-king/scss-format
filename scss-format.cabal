@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4f9f0e3220f44f2dfe87a84e4e16549b100e63e09f5df9150c15694d0fe9ed74
+-- hash: 65229a401252eda7e9f7bb37f937696bfd125b3c3b626fbc24d5c320f643eb39
 
 name:           scss-format
 version:        0.1.0.0
@@ -19,7 +19,6 @@ license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
-    ChangeLog.md
 
 source-repository head
   type: git

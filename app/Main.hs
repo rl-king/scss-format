@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main
   ( main,
@@ -7,6 +7,7 @@ module Main
 where
 
 import Control.Monad (when)
+import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Language.Scss.Format as Format
@@ -21,81 +22,79 @@ import Prelude hiding (log)
 
 main :: IO ()
 main = do
-  args@Args {_aSource, _aVerbose, _aOverwrite, _aVerify} <- parseOptions
-  when _aVerbose (logP "Command line arguments" args)
-  input <-
-    case _aSource of
-      FilePath path -> Text.readFile path
-      StdIn -> Text.getContents
-  when _aVerbose (log "Input" (Text.unpack input))
-  case Parser.parse input of
-    Left err -> do
-      hPutStrLn stderr err
-      exitFailure
-    Right result -> do
-      let formatted = Format.format result
-      when _aVerbose (logP "Parse result" result)
-      if _aVerify
-        then
-          when (Text.strip input /= formatted) $
-            exitWith (ExitFailure 100)
-        else case (_aSource, _aOverwrite) of
-          (FilePath path, True) ->
-            Text.writeFile path formatted
-          _ ->
-            Text.putStrLn formatted
-  where
-    log title x = do
-      putStrLn $ "-- " <> title
-      putStrLn x
-    logP title x = do
-      putStrLn $ "-- " <> title
-      Print.pPrintNoColor x
+  (verbose, args) <- parseOptions
+  when verbose $ log "Command line arguments" (Text.pack $ show args)
+  case args of
+    StdIn ->
+      Text.putStrLn . Format.format =<< parse =<< Text.getContents
+    FilePath path overwrite -> do
+      input <- fmap Format.format . parse =<< Text.readFile path
+      when verbose $ log "Parse result" input
+      if overwrite
+        then Text.writeFile path input
+        else Text.putStrLn input
+    Verify path -> do
+      input <- Text.readFile path
+      parsed <- parse input
+      verify (Text.pack path) input (Format.format parsed)
+
+parse :: Text -> IO [Parser.Value]
+parse =
+  either (\err -> hPutStrLn stderr err >> exitFailure) pure . Parser.parse
+
+log :: String -> Text -> IO ()
+log title x = do
+  putStrLn $ "-- " <> title
+  Print.pPrintNoColor x
+
+verify :: Text -> Text -> Text -> IO ()
+verify p i f
+  | Text.strip i /= f = Text.hPutStrLn stderr ("✗ " <> p) >> exitWith (ExitFailure 100)
+  | otherwise = Text.hPutStrLn stdout ("✓ " <> p) >> exitSuccess
 
 -- ARGS
 
-data Source
-  = FilePath String
+data Args
+  = FilePath String Overwrite
+  | Verify String
   | StdIn
   deriving (Show)
 
-data Args = Args
-  { _aVerbose :: !Bool,
-    _aOverwrite :: !Bool,
-    _aVerify :: !Bool,
-    _aSource :: !Source
-  }
-  deriving (Show)
+type Overwrite = Bool
 
-parseOptions :: IO Args
+type Verify = Bool
+
+type Verbose = Bool
+
+parseOptions :: IO (Verbose, Args)
 parseOptions =
-  customExecParser (prefs showHelpOnError) $
-    info (parser <**> helper) (fullDesc <> progDesc descr)
-  where
-    descr =
-      concat
-        [ "Format scss files, ",
-          "prints the result to stdout by default, ",
-          "use '-o' to replace the original file."
-        ]
+  let descr =
+        concat
+          [ "Format scss files, ",
+            "prints the result to stdout by default, ",
+            "use '-o' to replace the original file."
+          ]
+   in customExecParser (prefs showHelpOnError) $
+        info
+          ((,) <$> parseVerbose <*> parser <**> helper)
+          (fullDesc <> progDesc descr)
 
 parser :: Parser Args
 parser =
-  Args
-    <$> parseVerbose
-    <*> parseOverwrite
-    <*> parseVerify
-    <*> parseSource
+  let pick a b c
+        | b = Verify a
+        | otherwise = FilePath a c
+   in pick <$> parsePath <*> parseVerify <*> parseOverwrite
+        <|> StdIn <$ parseStdIn
 
-parseVerbose :: Parser Bool
+parseVerbose :: Parser Verbose
 parseVerbose =
   switch $
     long "verbose"
-      <> short 'v'
       <> showDefault
       <> help "Log a bit"
 
-parseOverwrite :: Parser Bool
+parseOverwrite :: Parser Overwrite
 parseOverwrite =
   switch $
     long "overwrite"
@@ -103,20 +102,16 @@ parseOverwrite =
       <> showDefault
       <> help "Replace the orginal file"
 
-parseVerify :: Parser Bool
+parseVerify :: Parser Verify
 parseVerify =
   switch $
     long "verify"
-      <> short 't'
+      <> short 'v'
       <> showDefault
       <> help "Test if file is correctly formatted"
 
-parseSource :: Parser Source
-parseSource =
-  (StdIn <$ parseStdIn) <|> (FilePath <$> parseFilepath)
-
-parseFilepath :: Parser String
-parseFilepath =
+parsePath :: Parser String
+parsePath =
   strOption $
     long "path"
       <> short 'p'
@@ -126,8 +121,7 @@ parseFilepath =
 parseStdIn :: Parser Bool
 parseStdIn =
   switch $
-    long "stdin"
-      <> help "Read from stdin"
+    long "stdin" <> help "Read from stdin"
 
 -- DEV
 
