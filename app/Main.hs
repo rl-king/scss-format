@@ -26,21 +26,28 @@ main = do
   when verbose $ log "Command line arguments" (Text.pack $ show args)
   case args of
     StdIn ->
-      Text.putStrLn . Format.format =<< parse =<< Text.getContents
+      Text.putStrLn . Format.format =<< parse "stdin" =<< Text.getContents
     FilePath path overwrite -> do
-      input <- fmap Format.format . parse =<< Text.readFile path
+      input <- fmap Format.format . parse path =<< Text.readFile path
       when verbose $ log "Parse result" input
       if overwrite
         then Text.writeFile path input
         else Text.putStrLn input
     Verify path -> do
       input <- Text.readFile path
-      parsed <- parse input
+      parsed <- parse path input
       verify (Text.pack path) input (Format.format parsed)
 
-parse :: Text -> IO [Parser.Value]
-parse =
-  either (\err -> hPutStrLn stderr err >> exitFailure) pure . Parser.parse
+parse :: String -> Text -> IO [Parser.Value]
+parse filename =
+  either
+    ( \err ->
+        hPutStrLn stderr ("Parse error in: " <> filename)
+          >> hPutStrLn stderr err
+          >> exitFailure
+    )
+    pure
+    . Parser.parse
 
 log :: String -> Text -> IO ()
 log title x = do
