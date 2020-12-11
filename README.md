@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/rl-king/scss-format.svg?branch=master)](https://travis-ci.org/rl-king/scss-format)
+
 # scss-format
 
 A non-configurable scss formatter
@@ -8,6 +9,22 @@ A non-configurable scss formatter
 * A single newline inbetween selectors
 * Add newlines around top level comments
 * Add closing `;` to last property if missing
+
+## Usage
+```shell
+Usage: scss-format [--verbose]
+                   [(-p|--path PATH) [-v|--verify] [-o|--overwrite] | --stdin]
+  Format scss files and directories, prints the result to stdout by default, use
+  '-o' to replace the original file.
+
+Available options:
+  --verbose                Log a bit
+  -p,--path PATH           Path or dir to a scss file(s)
+  -v,--verify              Test if file is correctly formatted
+  -o,--overwrite           Replace the orginal file
+  --stdin                  Read from stdin
+  -h,--help                Show this help text
+```
 
 ### Unformatted
 

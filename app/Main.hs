@@ -107,7 +107,7 @@ parseOptions :: IO (Verbose, Args)
 parseOptions =
   let descr =
         concat
-          [ "Format scss files, ",
+          [ "Format scss files and directories, ",
             "prints the result to stdout by default, ",
             "use '-o' to replace the original file."
           ]
@@ -153,7 +153,7 @@ parsePath =
     long "path"
       <> short 'p'
       <> metavar "PATH"
-      <> help "Path to a scss file"
+      <> help "Path or dir to a scss file(s)"
 
 parseStdIn :: Parser Bool
 parseStdIn =
