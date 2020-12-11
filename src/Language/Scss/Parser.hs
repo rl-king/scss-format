@@ -17,17 +17,18 @@ import qualified Data.Text as Text
 import Data.Void
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
+import Debug.Trace
 
 type Parser a =
   Parser.Parsec Void Text a
 
 data Value
-  = Selector Text [Value]
-  | AtRule Text Text [Value]
-  | Prop Text Text
-  | Variable Text Text
+  = Selector         Text [Value]
+  | AtRule           Text Text [Value]
+  | Prop             Text Text
+  | Variable         Text Text
   | MultilineComment Text
-  | Comment Text
+  | Comment          Text
   deriving (Show)
 
 parse :: Text -> Either String [Value]
@@ -74,6 +75,28 @@ selector =
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
+{-
+  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
+  _ <- char ' '
+  body <- parseAtRuleBody
+  maybeSemi <- optional semicolon
+  case maybeSemi of
+    Just _ -> do
+      whitespace
+      pure $ AtRule rule (Text.strip body) []
+    Nothing ->
+      AtRule rule (Text.strip body) <$> nestedValues
+
+parseAtRuleBody :: Parser Text
+parseAtRuleBody = Parser.label "at rule body" $
+  Text.concat <$> Parser.many nameIdents
+      where
+        nameIdents =
+          string "#{"
+          <|> (Text.singleton <$> otherNameIdentChars)
+
+        otherNameIdentChars = Parser.satisfy (\t -> t /= ';' && t /= '{') Parser.<?> "non ';' or '{' (but allow '#{')"
+-}
   rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= '{' && t /= ';' && t /= ' ')
   name <- parseAtRuleName
   lexe $
