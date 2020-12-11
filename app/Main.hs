@@ -37,7 +37,7 @@ main = do
     StdIn ->
       Text.putStrLn . Format.format =<< parse "stdin" =<< Text.getContents
     FilePath path overwrite -> do
-      fileNames <- findFiles path
+      fileNames <- concat <$> traverse findFiles path
       for_ fileNames $ \fileName -> do
         input <- fmap Format.format . parse fileName =<< Text.readFile fileName
         when verbose $ log "Parse result" input
@@ -45,7 +45,7 @@ main = do
           then Text.writeFile fileName input
           else Text.putStrLn input
     Verify path -> do
-      fileNames <- findFiles path
+      fileNames <- concat <$> traverse findFiles path
       result <- for fileNames $ \fileName -> do
         input <- Text.readFile fileName
         pure $
@@ -96,8 +96,8 @@ findFiles s =
 -- ARGS
 
 data Args
-  = FilePath String Overwrite
-  | Verify String
+  = FilePath [String] Overwrite
+  | Verify [String]
   | StdIn
   deriving (Show)
 
@@ -125,7 +125,7 @@ parser =
   let pick a b c
         | b = Verify a
         | otherwise = FilePath a c
-   in pick <$> parsePath <*> parseVerify <*> parseOverwrite
+   in pick <$> many parsePath <*> parseVerify <*> parseOverwrite
         <|> StdIn <$ parseStdIn
 
 parseVerbose :: Parser Verbose
