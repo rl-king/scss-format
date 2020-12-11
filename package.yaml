@@ -40,6 +40,7 @@ executables:
     dependencies:
     - directory
     - filepath
+    - ansi-terminal
     - Glob
     - scss-format
 

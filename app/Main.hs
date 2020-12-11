@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main
@@ -8,7 +9,7 @@ where
 
 import Control.Monad (when)
 import Data.Bifunctor (first)
-import Data.Either (partitionEithers)
+import Data.Either (lefts)
 import Data.Foldable (for_)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -17,6 +18,7 @@ import Data.Traversable (for)
 import qualified Language.Scss.Format as Format
 import qualified Language.Scss.Parser as Parser
 import Options.Applicative as Options
+import System.Console.ANSI as Console
 import qualified System.Directory as Directory
 import System.Exit
 import qualified System.FilePath.Glob as Glob
@@ -49,14 +51,16 @@ main = do
         pure $
           verify (Text.pack fileName) input . Format.format
             =<< first (("Parse error in: " <> Text.pack fileName <> " ") <>) (Parser.parse input)
-      case partitionEithers result of
-        ([], ok) -> do
-          for_ ok $ Text.hPutStrLn stdout
-          exitSuccess
-        (err, ok) -> do
-          for_ ok $ Text.hPutStrLn stdout
-          for_ err $ Text.hPutStrLn stderr
-          exitFailure
+      for_ result $ \case
+        Right ok -> do
+          Console.hSetSGR stderr [Console.SetColor Console.Foreground Console.Dull Console.Green]
+          Text.hPutStrLn stderr ok
+        Left err -> do
+          Console.hSetSGR stderr [Console.SetColor Console.Foreground Console.Dull Console.Red]
+          Text.hPutStrLn stderr err
+      if null (lefts result)
+        then exitSuccess
+        else exitFailure
 
 verify :: Text -> Text -> Text -> Either Text Text
 verify p i f
