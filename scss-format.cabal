@@ -1,10 +1,11 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.2.
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fcc9bf8f944ed05253c78684e6545a505c58f1979f83292bdaf55c61ad6c08ef
+-- hash: 65229a401252eda7e9f7bb37f937696bfd125b3c3b626fbc24d5c320f643eb39
 
 name:           scss-format
 version:        0.1.0.0
