@@ -4,7 +4,7 @@ github:              "rl-king/scss-format"
 license:             BSD3
 author:              "Ruben Lie King"
 maintainer:          "hello@rubenlieking.com"
-copyright:           "2019 Ruben Lie King"
+copyright:           "2020 Ruben Lie King"
 
 extra-source-files:
 - README.md
@@ -17,39 +17,6 @@ extra-source-files:
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/rl-king/scss-format#readme>
-
-default-extensions:
-  - BangPatterns
-  - ConstraintKinds
-  - DataKinds
-  - DefaultSignatures
-  - DeriveDataTypeable
-  - DeriveGeneric
-  - DeriveLift
-  - DuplicateRecordFields
-  - FlexibleContexts
-  - FlexibleInstances
-  - FunctionalDependencies
-  - GADTs
-  - GeneralizedNewtypeDeriving
-  - InstanceSigs
-  - LambdaCase
-  - MultiParamTypeClasses
-  - MultiWayIf
-  - NamedFieldPuns
-  - OverloadedStrings
-  - PackageImports
-  - QuasiQuotes
-  - RecordWildCards
-  - ScopedTypeVariables
-  - StandaloneDeriving
-  - TemplateHaskell
-  - TupleSections
-  - TypeApplications
-  - TypeFamilies
-  - ViewPatterns
-  - DerivingStrategies
-  - BlockArguments
 
 dependencies:
   - base >= 4.7 && < 5
