@@ -74,7 +74,7 @@ selector =
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
+  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= '{' && t /= ';' && t /= ' ')
   name <- parseAtRuleName
   lexe $
     asum
@@ -132,11 +132,18 @@ hashVar = do
     <*> Parser.chunk "}"
 
 multilineComment :: Parser Value
-multilineComment = do
-  _ <- Parser.chunk "/*"
-  c <- Parser.takeWhileP (Just "a multiline comment") (/= '*')
-  MultilineComment c <$ lexe (Parser.try (Parser.chunk "*/"))
-    <|> multilineComment
+multilineComment =
+  let parseLine = do
+        value <- Parser.takeWhileP (Just "a multiline comment") (/= '*')
+        asum
+          [ value <$ Parser.try (Parser.chunk "*/"),
+            do
+              char '*'
+              mappend (value <> "*") <$> parseLine
+          ]
+   in do
+        _ <- Parser.chunk "/*"
+        MultilineComment <$> lexe parseLine
 
 comment :: Parser Value
 comment = do
