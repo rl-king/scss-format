@@ -67,7 +67,7 @@ Asumes `haskell-stack` is installed
 4. scss-format --path './style.scss'
 
 
-## Install (spac)emacs
+### Install emacs
 
 Install [reformatter](https://github.com/purcell/reformatter.el) and add the following to your config:
 ``` elisp
@@ -78,6 +78,21 @@ Install [reformatter](https://github.com/purcell/reformatter.el) and add the fol
 ```
 
 Enable format on save by adding `(add-hook 'scss-mode-hook 'scss-format-on-save-mode)` to your config as well.
+
+### VSCode
+
+Install `steefh.external-formatters`, search in extensions tab. Configure with:
+
+``` json
+"externalFormatters.languages": {
+    "scss": {
+        "command": "scss-format",
+        "arguments": [
+            "--stdin"
+        ]
+    }
+}
+```
 
 ## Develop
 
