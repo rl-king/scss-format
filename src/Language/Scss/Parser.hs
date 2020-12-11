@@ -10,6 +10,8 @@ where
 
 import Control.Applicative hiding (many)
 import Data.Bifunctor (first)
+import Data.Foldable (asum)
+import Data.Functor (void)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Void
@@ -34,7 +36,7 @@ parse =
 
 parser :: Parser [Value]
 parser =
-  whitespace *> values Parser.eof
+  ws *> values Parser.eof
 
 values :: Parser () -> Parser [Value]
 values =
@@ -47,42 +49,50 @@ values =
 
 nestedValues :: Parser [Value]
 nestedValues =
-  surround whitespace curlyOpen
-    *> values curlyClose
-    <* whitespace
+  curlyOpen *> values curlyClose
 
 selector :: Parser Value
-selector = do
-  name <-
-    Parser.takeWhileP
-      (Just "a selector")
-      (\t -> t /= '{' && t /= ';' && t /= '}')
-  Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
-  Selector (Text.strip name) <$> nestedValues
+selector =
+  let nameParser =
+        Parser.takeWhileP
+          (Just "a selector")
+          (\t -> t /= '#' && t /= '{' && t /= ';' && t /= '}')
+   in do
+        name <- nameParser
+        more <-
+          asum
+            [ do
+                _ <- char '#'
+                rest <- (mappend <$> hashVar <*> nameParser) <|> nameParser
+                pure $ Text.stripStart name <> "#" <> Text.strip rest,
+              do
+                pure $ Text.strip name
+            ]
+        Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
+        Selector more <$> nestedValues
 
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
+  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= '{' && t /= ';' && t /= ' ')
   name <- parseAtRuleName
-  maybeSemi <- optional semicolon
-  case maybeSemi of
-    Just _ -> do
-      whitespace
-      pure $ AtRule rule (Text.strip name) []
-    Nothing ->
-      AtRule rule (Text.strip name) <$> nestedValues
+  lexe $
+    asum
+      [ AtRule rule (Text.strip name) [] <$ Parser.try semicolon,
+        AtRule rule (Text.strip name) <$> nestedValues
+      ]
 
 parseAtRuleName :: Parser Text
 parseAtRuleName = do
   v1 <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
-  maybeHash <- optional (Parser.chunk "#{")
-  case maybeHash of
-    Just hash -> do
-      v2 <- parseAtRuleName
-      pure (v1 <> hash <> v2)
-    Nothing ->
-      pure v1
+  lexe $
+    asum
+      [ do
+          hash <- Parser.try (lexe (Parser.chunk "#{"))
+          v2 <- parseAtRuleName
+          pure (v1 <> hash <> v2),
+        pure v1
+      ]
 
 propOrVar :: Parser Value
 propOrVar =
@@ -91,81 +101,83 @@ propOrVar =
 
 propName :: Parser Text
 propName = do
-  Parser.notFollowedBy
-    (Parser.satisfy (\t -> t == '&' || t == '>' || t == '~' || t == '+'))
+  Parser.notFollowedBy (Parser.satisfy (\t -> t == '&' || t == '>' || t == '~' || t == '+'))
   Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
-    <* surround whitespace colon
+    <* surround ws colon
 
 propVal :: Parser Text
 propVal = do
-  v <-
-    Parser.takeWhileP
-      (Just "a prop value")
-      (\t -> t /= '#' && t /= '}' && t /= ';')
-  isHash <- optional (char '#')
-  isBase64 <- optional (Parser.chunk ";base64")
-  case (isHash, isBase64) of
-    (Nothing, Nothing) -> do
-      surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
-      pure (Text.stripEnd v)
-    (Just _, _) -> do
-      rest <- (mappend <$> hashVar <*> propVal) <|> propVal
-      pure (Text.stripStart v <> "#" <> rest)
-    (_, Just _) -> do
-      rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
-      surround whitespace (semicolon <|> Parser.lookAhead curlyClose)
-      pure (Text.stripEnd v <> ";base64" <> Text.stripEnd rest)
+  v <- Parser.takeWhileP (Just "a prop value") (\t -> t /= '#' && t /= '}' && t /= ';')
+  lexe $
+    asum
+      [ do
+          _ <- char '#'
+          rest <- (mappend <$> hashVar <*> propVal) <|> propVal
+          pure (Text.stripStart v <> "#" <> rest),
+        do
+          _ <- Parser.chunk ";base64"
+          rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
+          lexe (semicolon <|> Parser.lookAhead curlyClose)
+          pure (Text.stripEnd v <> ";base64" <> Text.stripEnd rest),
+        do
+          lexe (semicolon <|> Parser.lookAhead curlyClose)
+          pure (Text.stripEnd v)
+      ]
 
 hashVar :: Parser Text
-hashVar =
+hashVar = do
   (\a b c -> a <> b <> c)
     <$> Parser.chunk "{"
     <*> Parser.takeWhileP (Just "a hash var") (/= '}')
     <*> Parser.chunk "}"
 
 multilineComment :: Parser Value
-multilineComment = do
-  _ <- Parser.chunk "/*"
-  c <- Parser.takeWhileP (Just "a multiline comment") (/= '*')
-  closing <- optional (Parser.chunk "*/")
-  case closing of
-    Nothing ->
-      multilineComment
-    Just _ -> do
-      whitespace
-      pure (MultilineComment c)
+multilineComment =
+  let parseLine = do
+        value <- Parser.takeWhileP (Just "a multiline comment") (/= '*')
+        asum
+          [ value <$ Parser.try (Parser.chunk "*/"),
+            do
+              char '*'
+              mappend (value <> "*") <$> parseLine
+          ]
+   in do
+        _ <- Parser.chunk "/*"
+        MultilineComment <$> lexe parseLine
 
 comment :: Parser Value
 comment = do
   _ <- Parser.chunk "//"
-  c <- Parser.takeWhileP (Just "a comment") (/= '\n')
-  whitespace
-  pure (Comment c)
+  lexe $ Comment <$> Parser.takeWhileP (Just "a comment") (/= '\n')
 
 semicolon :: Parser ()
 semicolon =
-  () <$ char ';'
+  () <$ lexe (char ';')
 
 colon :: Parser ()
 colon =
-  () <$ char ':'
+  () <$ lexe (char ':')
 
 curlyOpen :: Parser ()
 curlyOpen =
-  () <$ char '{'
+  () <$ lexe (char '{')
 
 curlyClose :: Parser ()
 curlyClose =
-  () <$ char '}'
+  () <$ lexe (char '}')
 
 dollar :: Parser ()
 dollar =
-  () <$ char '$'
-
-whitespace :: Parser ()
-whitespace =
-  space <|> () <$ eol <|> () <$ newline
+  () <$ lexe (char '$')
 
 surround :: Parser a -> Parser b -> Parser b
 surround a b =
   a *> b <* a
+
+lexe :: Parser a -> Parser a
+lexe =
+  (<* ws)
+
+ws :: Parser ()
+ws =
+  space <|> void eol <|> void newline
