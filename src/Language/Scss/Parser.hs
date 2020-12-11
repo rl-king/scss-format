@@ -30,9 +30,9 @@ data Value
   | Comment Text
   deriving (Show)
 
-parse :: Text -> Either String [Value]
+parse :: Text -> Either Text [Value]
 parse =
-  first Parser.errorBundlePretty . Parser.runParser parser ""
+  first (Text.pack . Parser.errorBundlePretty) . Parser.runParser parser ""
 
 parser :: Parser [Value]
 parser =

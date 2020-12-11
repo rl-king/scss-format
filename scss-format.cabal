@@ -1,11 +1,10 @@
 cabal-version: 1.12
 
-
 -- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 65229a401252eda7e9f7bb37f937696bfd125b3c3b626fbc24d5c320f643eb39
+-- hash: 0c1b480590bccdede5b0d9ff4731a5d09bcf968f2f8a69bd843bb7a01f489ce5
 
 name:           scss-format
 version:        0.1.0.0
@@ -14,7 +13,7 @@ homepage:       https://github.com/rl-king/scss-format#readme
 bug-reports:    https://github.com/rl-king/scss-format/issues
 author:         Ruben Lie King
 maintainer:     hello@rubenlieking.com
-copyright:      2019 Ruben Lie King
+copyright:      2020 Ruben Lie King
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -33,7 +32,6 @@ library
       Paths_scss_format
   hs-source-dirs:
       src
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies BlockArguments
   build-depends:
       base >=4.7 && <5
     , megaparsec
@@ -49,10 +47,12 @@ executable scss-format
       Paths_scss_format
   hs-source-dirs:
       app
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies BlockArguments
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      Glob
+    , base >=4.7 && <5
+    , directory
+    , filepath
     , megaparsec
     , optparse-applicative
     , pretty-simple
@@ -69,7 +69,6 @@ test-suite scss-format-test
       Paths_scss_format
   hs-source-dirs:
       test
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies BlockArguments
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       base >=4.7 && <5
@@ -91,7 +90,6 @@ benchmark scss-format-benchmarks
       Paths_scss_format
   hs-source-dirs:
       bench
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies BlockArguments
   ghc-options: -rtsopts -threaded -with-rtsopts=-N -O2
   build-depends:
       base

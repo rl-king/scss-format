@@ -38,6 +38,9 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - directory
+    - filepath
+    - Glob
     - scss-format
 
 benchmarks:

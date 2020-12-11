@@ -7,13 +7,20 @@ module Main
 where
 
 import Control.Monad (when)
+import Data.Bifunctor (first)
+import Data.Either (partitionEithers)
+import Data.Foldable (for_)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
+import Data.Traversable (for)
 import qualified Language.Scss.Format as Format
 import qualified Language.Scss.Parser as Parser
 import Options.Applicative as Options
+import qualified System.Directory as Directory
 import System.Exit
+import qualified System.FilePath.Glob as Glob
+import System.FilePath.Posix ((</>))
 import System.IO
 import qualified Text.Pretty.Simple as Print
 import Prelude hiding (log)
@@ -28,22 +35,40 @@ main = do
     StdIn ->
       Text.putStrLn . Format.format =<< parse "stdin" =<< Text.getContents
     FilePath path overwrite -> do
-      input <- fmap Format.format . parse path =<< Text.readFile path
-      when verbose $ log "Parse result" input
-      if overwrite
-        then Text.writeFile path input
-        else Text.putStrLn input
+      fileNames <- findFiles path
+      for_ fileNames $ \fileName -> do
+        input <- fmap Format.format . parse fileName =<< Text.readFile fileName
+        when verbose $ log "Parse result" input
+        if overwrite
+          then Text.writeFile fileName input
+          else Text.putStrLn input
     Verify path -> do
-      input <- Text.readFile path
-      parsed <- parse path input
-      verify (Text.pack path) input (Format.format parsed)
+      fileNames <- findFiles path
+      result <- for fileNames $ \fileName -> do
+        input <- Text.readFile fileName
+        pure $
+          verify (Text.pack fileName) input . Format.format
+            =<< first (("Parse error in: " <> Text.pack fileName <> " ") <>) (Parser.parse input)
+      case partitionEithers result of
+        ([], ok) -> do
+          for_ ok $ Text.hPutStrLn stdout
+          exitSuccess
+        (err, ok) -> do
+          for_ ok $ Text.hPutStrLn stdout
+          for_ err $ Text.hPutStrLn stderr
+          exitFailure
+
+verify :: Text -> Text -> Text -> Either Text Text
+verify p i f
+  | Text.strip i /= f = Left ("✗ " <> p)
+  | otherwise = Right ("✓ " <> p)
 
 parse :: String -> Text -> IO [Parser.Value]
 parse filename =
   either
     ( \err ->
         hPutStrLn stderr ("Parse error in: " <> filename)
-          >> hPutStrLn stderr err
+          >> hPutStrLn stderr (Text.unpack err)
           >> exitFailure
     )
     pure
@@ -54,10 +79,15 @@ log title x = do
   putStrLn $ "-- " <> title
   Print.pPrintNoColor x
 
-verify :: Text -> Text -> Text -> IO ()
-verify p i f
-  | Text.strip i /= f = Text.hPutStrLn stderr ("✗ " <> p) >> exitWith (ExitFailure 100)
-  | otherwise = Text.hPutStrLn stdout ("✓ " <> p) >> exitSuccess
+findFiles :: String -> IO [FilePath]
+findFiles s =
+  let collect =
+        (<>)
+          <$> Glob.glob (s </> "**/*.scss")
+          <*> Glob.glob (s </> "**/*.css")
+   in do
+        isDir <- Directory.doesDirectoryExist s
+        if isDir then collect else pure [s]
 
 -- ARGS
 
@@ -137,7 +167,7 @@ dev = do
   input <- Text.readFile "style.scss"
   case Parser.parse input of
     Left e ->
-      putStrLn e
+      Text.putStrLn e
     Right r -> do
       putStrLn "\n======\n"
       Text.putStrLn (Format.format r)
