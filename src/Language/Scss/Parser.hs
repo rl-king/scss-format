@@ -74,28 +74,6 @@ selector =
 atRule :: Parser Value
 atRule = do
   _ <- char '@'
-  {-
-    rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= ';' && t /= ' ')
-    _ <- char ' '
-    body <- parseAtRuleBody
-    maybeSemi <- optional semicolon
-    case maybeSemi of
-      Just _ -> do
-        whitespace
-        pure $ AtRule rule (Text.strip body) []
-      Nothing ->
-        AtRule rule (Text.strip body) <$> nestedValues
-
-  parseAtRuleBody :: Parser Text
-  parseAtRuleBody = Parser.label "at rule body" $
-    Text.concat <$> Parser.many nameIdents
-        where
-          nameIdents =
-            string "#{"
-            <|> (Text.singleton <$> otherNameIdentChars)
-
-          otherNameIdentChars = Parser.satisfy (\t -> t /= ';' && t /= '{') Parser.<?> "non ';' or '{' (but allow '#{')"
-  -}
   rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= '{' && t /= ';' && t /= ' ')
   name <- parseAtRuleName
   lexe $
@@ -110,7 +88,7 @@ parseAtRuleName = do
   lexe $
     asum
       [ do
-          hash <- Parser.try (lexe (Parser.chunk "#{"))
+          hash <- Parser.try (lexe (Parser.chunk "#"))
           v2 <- parseAtRuleName
           pure (v1 <> hash <> v2),
         pure v1
