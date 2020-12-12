@@ -17,6 +17,7 @@ import qualified Data.Text as Text
 import Data.Void
 import qualified Text.Megaparsec as Parser
 import Text.Megaparsec.Char
+import Text.Megaparsec.Debug
 
 type Parser a =
   Parser.Parsec Void Text a
@@ -43,93 +44,93 @@ values =
   Parser.manyTill $
     multilineComment
       <|> comment
-      <|> Parser.try atRule
-      <|> Parser.try selector
-      <|> propOrVar
+      <|> variable
+      <|> atRule
+      <|> Parser.try property
+      <|> selector
 
 nestedValues :: Parser [Value]
 nestedValues =
-  curlyOpen *> values curlyClose
+  lexe $ curlyOpen *> values curlyClose
 
 selector :: Parser Value
 selector =
-  let nameParser =
-        Parser.takeWhileP
-          (Just "a selector")
-          (\t -> t /= '#' && t /= '{' && t /= ';' && t /= '}')
-   in do
-        name <- nameParser
-        more <-
-          asum
-            [ do
-                _ <- char '#'
-                rest <- (mappend <$> hashVar <*> nameParser) <|> nameParser
-                pure $ Text.stripStart name <> "#" <> Text.strip rest,
-              do
-                pure $ Text.strip name
-            ]
-        Parser.notFollowedBy (Parser.satisfy (\t -> t == ';' || t == '}'))
-        Selector more <$> nestedValues
+  let parseName = do
+        name <- Parser.takeWhileP (Just "a selector name like main, .class or #id") $
+          \c -> c /= '{' && c /= '#'
+        continueIfHash name parseName
+   in Selector <$> (Text.strip <$> parseName) <*> nestedValues
 
 atRule :: Parser Value
 atRule = do
-  _ <- char '@'
-  rule <- Parser.takeWhileP (Just "at rule") (\t -> t /= '{' && t /= ';' && t /= ' ')
-  name <- parseAtRuleName
-  lexe $
-    asum
-      [ AtRule rule (Text.strip name) [] <$ Parser.try semicolon,
-        AtRule rule (Text.strip name) <$> nestedValues
-      ]
+  let parseName = do
+        name <- Parser.takeWhileP (Just "an @rule name") $
+          \c -> c /= '{' && c /= '#' && c /= ';'
+        continueIfHash name parseName
+  _ <- at
+  rule <- Parser.takeWhileP (Just "@ rule") $
+    \t -> t /= '{' && t /= ';' && t /= ' '
+  name <- parseName
+  asum
+    [ AtRule rule (Text.strip name) [] <$ Parser.try semicolon,
+      AtRule rule (Text.strip name) <$> nestedValues
+    ]
 
-parseAtRuleName :: Parser Text
-parseAtRuleName = do
-  v1 <- Parser.takeWhileP (Just "at rule name") (\t -> t /= ';' && t /= '{' && t /= '#')
-  lexe $
-    asum
-      [ do
-          hash <- Parser.try (lexe (Parser.chunk "#"))
-          v2 <- parseAtRuleName
-          pure (v1 <> hash <> v2),
-        pure v1
-      ]
-
-propOrVar :: Parser Value
-propOrVar =
+variable :: Parser Value
+variable =
   Variable <$> (dollar *> propName) <*> propVal
-    <|> Prop <$> propName <*> propVal
+
+property :: Parser Value
+property = do
+  let parseName = do
+        name <- Parser.takeWhileP (Just "a property name like display") $
+          \c -> c /= ':' && c /= '{' && c /= '#'
+
+        continueIfHash name parseName
+  Prop <$> (parseName <* colon) <*> (propVal <* Parser.notFollowedBy curlyOpen)
 
 propName :: Parser Text
 propName = do
+  let parseName = do
+        name <- Parser.takeWhileP (Just "a property name like display") $
+          \c -> c /= ':' && c /= '#'
+        continueIfHash name parseName
   Parser.notFollowedBy (Parser.satisfy (\t -> t == '&' || t == '>' || t == '~' || t == '+'))
-  Parser.takeWhileP (Just "a prop name") (\t -> t /= ':' && t /= ' ')
-    <* surround ws colon
+  Text.strip <$> (parseName <* colon)
 
 propVal :: Parser Text
 propVal = do
-  v <- Parser.takeWhileP (Just "a prop value") (\t -> t /= '#' && t /= '}' && t /= ';')
-  lexe $
-    asum
-      [ do
-          _ <- char '#'
-          rest <- (mappend <$> hashVar <*> propVal) <|> propVal
-          pure (Text.stripStart v <> "#" <> rest),
-        do
-          _ <- Parser.chunk ";base64"
-          rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
-          lexe (semicolon <|> Parser.lookAhead curlyClose)
-          pure (Text.stripEnd v <> ";base64" <> Text.stripEnd rest),
-        do
-          lexe (semicolon <|> Parser.lookAhead curlyClose)
-          pure (Text.stripEnd v)
-      ]
+  let parseVal = do
+        val <- Parser.takeWhileP (Just "a property value like 1px") $
+          \c -> c /= ';' && c /= '#' && c /= '{' && c /= '}'
+        continueIfDataUrl val <|> continueIfHash val parseVal
+  value <- lexe parseVal
+  semicolon <|> Parser.lookAhead curlyClose
+  pure value
 
-hashVar :: Parser Text
-hashVar = do
-  (\a b c -> a <> b <> c)
-    <$> Parser.chunk "{"
-    <*> Parser.takeWhileP (Just "a hash var") (/= '}')
-    <*> Parser.chunk "}"
+-- HELPER
+
+continueIfHash :: Text -> Parser Text -> Parser Text
+continueIfHash val p =
+  let hashVar = do
+        (\a b c -> a <> b <> c)
+          <$> Parser.chunk "#{"
+          <*> Parser.takeWhileP (Just "a hash var") (/= '}')
+          <*> Parser.chunk "}"
+   in asum
+        [ do
+            hash <- hashVar <|> Parser.chunk "#"
+            mappend (val <> hash) <$> p,
+          pure val
+        ]
+
+continueIfDataUrl :: Text -> Parser Text
+continueIfDataUrl val = do
+  base <- Parser.chunk ";base64"
+  rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
+  pure (Text.stripEnd val <> base <> Text.stripEnd rest)
+
+-- COMMENTS
 
 multilineComment :: Parser Value
 multilineComment =
@@ -170,9 +171,9 @@ dollar :: Parser ()
 dollar =
   () <$ lexe (char '$')
 
-surround :: Parser a -> Parser b -> Parser b
-surround a b =
-  a *> b <* a
+at :: Parser ()
+at =
+  () <$ lexe (char '@')
 
 lexe :: Parser a -> Parser a
 lexe =
