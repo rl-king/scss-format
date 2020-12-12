@@ -95,7 +95,6 @@ propName = do
         name <- Parser.takeWhileP (Just "a property name like display") $
           \c -> c /= ':' && c /= '#'
         continueIfHash name parseName
-  Parser.notFollowedBy (Parser.satisfy (\t -> t == '&' || t == '>' || t == '~' || t == '+'))
   Text.strip <$> (parseName <* colon)
 
 propVal :: Parser Text
