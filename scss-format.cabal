@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ef5498f9159cd3d3fbae052a73e634d63d25f3cfd098e6f569048b470227162c
+-- hash: eebdbd3c54e7c0ecb1d8d004d2c50a69b22cf9439db4f84d6755616da1e4458a
 
 name:           scss-format
 version:        0.1.0.0
@@ -47,7 +47,7 @@ executable scss-format
       Paths_scss_format
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
       Glob
     , ansi-terminal

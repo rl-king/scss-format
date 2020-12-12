@@ -58,7 +58,7 @@ selector =
   let parseName = do
         name <- Parser.takeWhileP (Just "a selector name like main, .class or #id") $
           \c -> c /= '{' && c /= '#'
-        continueIfHash name parseName
+        continueHash name parseName
    in Selector <$> (Text.strip <$> parseName) <*> nestedValues
 
 atRule :: Parser Value
@@ -66,7 +66,7 @@ atRule = do
   let parseName = do
         name <- Parser.takeWhileP (Just "an @rule name") $
           \c -> c /= '{' && c /= '#' && c /= ';'
-        continueIfHash name parseName
+        continueHash name parseName
   _ <- at
   rule <- Parser.takeWhileP (Just "@ rule") $
     \t -> t /= '{' && t /= ';' && t /= ' '
@@ -78,43 +78,38 @@ atRule = do
 
 variable :: Parser Value
 variable =
-  Variable <$> (dollar *> propName) <*> propVal
+  let parseName = do
+        name <- Parser.takeWhileP (Just "a variable name") $
+          \c -> c /= ':' && c /= '#'
+        continueHash name parseName <* colon
+   in Variable <$> (dollar *> (Text.strip <$> parseName)) <*> propertyValue
 
 property :: Parser Value
-property = do
+property =
   let parseName = do
         name <- Parser.takeWhileP (Just "a property name like display") $
           \c -> c /= ':' && c /= '{' && c /= '#'
+        continueHash name parseName
+   in Prop <$> (parseName <* colon) <*> (propertyValue <* Parser.notFollowedBy curlyOpen)
 
-        continueIfHash name parseName
-  Prop <$> (parseName <* colon) <*> (propVal <* Parser.notFollowedBy curlyOpen)
-
-propName :: Parser Text
-propName = do
-  let parseName = do
-        name <- Parser.takeWhileP (Just "a property name like display") $
-          \c -> c /= ':' && c /= '#'
-        continueIfHash name parseName
-  Text.strip <$> (parseName <* colon)
-
-propVal :: Parser Text
-propVal = do
+propertyValue :: Parser Text
+propertyValue = do
   let parseVal = do
         val <- Parser.takeWhileP (Just "a property value like 1px") $
           \c -> c /= ';' && c /= '#' && c /= '{' && c /= '}'
-        continueIfDataUrl val <|> continueIfHash val parseVal
+        ifDataUrl val <|> continueHash val parseVal
   value <- lexe parseVal
   semicolon <|> Parser.lookAhead curlyClose
   pure $ Text.strip value
 
--- HELPER
+-- HELPERS
 
-continueIfHash :: Text -> Parser Text -> Parser Text
-continueIfHash val p =
+continueHash :: Text -> Parser Text -> Parser Text
+continueHash val p =
   let hashVar = do
         (\a b c -> a <> Text.strip b <> c)
           <$> Parser.chunk "#{"
-          <*> Parser.takeWhileP (Just "a hash var") (/= '}')
+          <*> Parser.takeWhileP (Just "some interpolated value") (/= '}')
           <*> Parser.chunk "}"
    in asum
         [ do
@@ -123,8 +118,8 @@ continueIfHash val p =
           pure val
         ]
 
-continueIfDataUrl :: Text -> Parser Text
-continueIfDataUrl val = do
+ifDataUrl :: Text -> Parser Text
+ifDataUrl val = do
   base <- Parser.chunk ";base64"
   rest <- Parser.takeWhileP (Just "a base64 value") (\t -> t /= '}' && t /= ';')
   pure (Text.stripEnd val <> base <> Text.stripEnd rest)
