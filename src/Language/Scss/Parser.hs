@@ -113,7 +113,7 @@ propVal = do
 continueIfHash :: Text -> Parser Text -> Parser Text
 continueIfHash val p =
   let hashVar = do
-        (\a b c -> a <> b <> c)
+        (\a b c -> a <> Text.strip b <> c)
           <$> Parser.chunk "#{"
           <*> Parser.takeWhileP (Just "a hash var") (/= '}')
           <*> Parser.chunk "}"
