@@ -106,7 +106,7 @@ propVal = do
         continueIfDataUrl val <|> continueIfHash val parseVal
   value <- lexe parseVal
   semicolon <|> Parser.lookAhead curlyClose
-  pure value
+  pure $ Text.strip value
 
 -- HELPER
 
