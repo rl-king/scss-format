@@ -125,6 +125,8 @@ propsSorter value =
       fromMaybe 0 (Map.lookup name sortedProps)
     Variable _ _ ->
       -2
+    AtRule "return" _ _ ->
+      maxBound
     AtRule _ _ [] ->
       -1
     AtRule {} ->
