@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/rl-king/scss-format.svg?branch=master)](https://travis-ci.org/rl-king/scss-format)
+[![Actions Status](https://github.com/rl-king/scss-format/workflows/ci/badge.svg)](https://github.com/rl-king/scss-format/actions)
 
 # scss-format
 
