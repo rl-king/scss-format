@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/rl-king/scss-format/workflows/ci/badge.svg)](https://github.com/rl-king/scss-format/actions)
+[![Actions Status](https://github.com/rl-king/scss-format/workflows/test/badge.svg)](https://github.com/rl-king/scss-format/actions)
 
 # scss-format
 
