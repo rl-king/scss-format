@@ -65,8 +65,11 @@ atRule :: Parser Value
 atRule = do
   let parseName = do
         name <- Parser.takeWhileP (Just "an @rule name") $
-          \c -> c /= '{' && c /= '#' && c /= ';'
-        continueHash name parseName
+          \c -> c /= '{' && c /= '#' && c /= '"' && c /= ';'
+        asum
+          [ stringValue name parseName,
+            continueHash name parseName
+          ]
   _ <- at
   rule <- Parser.takeWhileP (Just "@ rule") $
     \t -> t /= '{' && t /= ';' && t /= ' '
@@ -117,6 +120,17 @@ continueHash val p =
             mappend (val <> hash) <$> p,
           pure val
         ]
+
+stringValue :: Text -> Parser Text -> Parser Text
+stringValue val p =
+  let stringVal = do
+        (\a b c -> a <> Text.strip b <> c)
+          <$> Parser.chunk "\""
+          <*> Parser.takeWhileP (Just "some string value") (/= '"')
+          <*> Parser.chunk "\""
+   in do
+        s <- stringVal <|> Parser.chunk "\""
+        mappend (val <> s) <$> p
 
 ifDataUrl :: Text -> Parser Text
 ifDataUrl val = do
