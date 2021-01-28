@@ -37,8 +37,7 @@ renderValue depth previous current =
   case current of
     Selector name values ->
       addNewLine depth previous current
-        <> indent depth
-        <> B.fromText name
+        <> B.fromText (matchIndentation depth name)
         <> " {"
         <> newline
         <> renderValueList depth values
@@ -100,8 +99,12 @@ newline =
   B.singleton '\n'
 
 indent :: Int -> Builder
-indent i =
-  B.fromText $ Text.replicate i "    "
+indent =
+  B.fromText . indentation
+
+indentation :: Int -> Text
+indentation i =
+  Text.replicate i "    "
 
 addNewLine :: Int -> Maybe Value -> Value -> Builder
 addNewLine depth previous current =
@@ -117,6 +120,10 @@ addNewLine depth previous current =
       | depth == 0 -> newline <> newline
       | otherwise -> newline
     _ -> newline
+
+matchIndentation :: Int -> Text -> Text
+matchIndentation depth =
+  Text.intercalate "\n" . fmap ((indentation depth <>) . Text.strip) . Text.lines
 
 propsSorter :: Value -> Int
 propsSorter value =

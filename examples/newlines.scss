@@ -16,3 +16,8 @@ something {
 
 
 h1 {color: red;}
+
+h1 {
+    .foo,
+   .bar {color: red;}
+}
