@@ -93,7 +93,8 @@ property =
         name <- Parser.takeWhileP (Just "a property name like display") $
           \c -> c /= ':' && c /= '{' && c /= '#'
         continueHash name parseName
-   in Prop <$> (parseName <* colon) <*> (propertyValue <* Parser.notFollowedBy curlyOpen)
+   in Prop <$> (Text.strip <$> parseName <* colon)
+        <*> (propertyValue <* Parser.notFollowedBy curlyOpen)
 
 propertyValue :: Parser Text
 propertyValue = do
