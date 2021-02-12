@@ -7,6 +7,7 @@ module Main
   )
 where
 
+import qualified Control.Concurrent.Async as Async
 import Control.Monad (when)
 import Data.Bifunctor (first)
 import Data.Either (lefts)
@@ -46,21 +47,25 @@ main = do
           else Text.putStrLn input
     Verify path -> do
       fileNames <- concat <$> traverse findFiles path
-      result <- for fileNames $ \fileName -> do
-        input <- Text.readFile fileName
+      files <- for fileNames $ \fileName ->
+        (,) (Text.pack fileName) <$> Text.readFile fileName
+      result <- Async.forConcurrently files $ \(fileName, input) ->
         pure $
-          verify (Text.pack fileName) input . Format.format
-            =<< first (("Parse error in: " <> Text.pack fileName <> " ") <>) (Parser.parse input)
+          first (("Parse error in: " <> fileName <> " ") <>) (Parser.parse input)
+            >>= verify fileName input . Format.format
       for_ result $ \case
-        Right ok -> do
-          Console.hSetSGR stderr [Console.SetColor Console.Foreground Console.Dull Console.Green]
-          Text.hPutStrLn stderr ok
-        Left err -> do
-          Console.hSetSGR stderr [Console.SetColor Console.Foreground Console.Dull Console.Red]
-          Text.hPutStrLn stderr err
+        Right ok -> prettyPrint Console.Green ok
+        Left err -> prettyPrint Console.Red err
       if null (lefts result)
         then exitSuccess
         else exitFailure
+
+prettyPrint :: Color -> Text -> IO ()
+prettyPrint color message = do
+  Console.hSetSGR
+    stderr
+    [Console.SetColor Console.Foreground Console.Dull color]
+  Text.hPutStrLn stderr message
 
 verify :: Text -> Text -> Text -> Either Text Text
 verify p i f

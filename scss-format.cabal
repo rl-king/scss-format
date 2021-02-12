@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eebdbd3c54e7c0ecb1d8d004d2c50a69b22cf9439db4f84d6755616da1e4458a
+-- hash: f1db5d0857b85e71d443e73cb5b5223331d1969f9e8a24748b3ab05dc6d8de49
 
 name:           scss-format
 version:        0.1.0.0
@@ -33,7 +33,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      async
+    , base >=4.7 && <5
     , megaparsec
     , optparse-applicative
     , pretty-simple
@@ -51,6 +52,7 @@ executable scss-format
   build-depends:
       Glob
     , ansi-terminal
+    , async
     , base >=4.7 && <5
     , directory
     , filepath
@@ -72,7 +74,8 @@ test-suite scss-format-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
   build-depends:
-      base >=4.7 && <5
+      async
+    , base >=4.7 && <5
     , directory
     , filepath
     , hspec
@@ -93,7 +96,8 @@ benchmark scss-format-benchmarks
       bench
   ghc-options: -rtsopts -threaded -with-rtsopts=-N -O2
   build-depends:
-      base
+      async
+    , base
     , criterion
     , megaparsec
     , optparse-applicative
