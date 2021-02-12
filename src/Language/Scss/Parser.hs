@@ -23,7 +23,7 @@ type Parser a =
   Parser.Parsec Void Text a
 
 data Value
-  = Selector Text [Value]
+  = Selector [Text] [Value]
   | AtRule Text Text [Value]
   | Prop Text Text
   | Variable Text Text
@@ -57,9 +57,11 @@ selector :: Parser Value
 selector =
   let parseName = do
         name <- Parser.takeWhileP (Just "a selector name like main, .class or #id") $
-          \c -> c /= '{' && c /= '#'
+          \c -> c /= '{' && c /= '#' && c /= ','
         continueHash name parseName
-   in Selector <$> (Text.strip <$> parseName) <*> nestedValues
+   in Selector
+        <$> Parser.sepBy (Text.strip <$> parseName) comma
+        <*> nestedValues
 
 atRule :: Parser Value
 atRule = do
@@ -179,6 +181,10 @@ curlyClose =
 dollar :: Parser ()
 dollar =
   () <$ lexe (char '$')
+
+comma :: Parser ()
+comma =
+  () <$ lexe (char ',')
 
 at :: Parser ()
 at =

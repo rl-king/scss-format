@@ -121,9 +121,9 @@ addNewLine depth previous current =
       | otherwise -> newline
     _ -> newline
 
-matchIndentation :: Int -> Text -> Text
+matchIndentation :: Int -> [Text] -> Text
 matchIndentation depth =
-  Text.intercalate "\n" . fmap ((indentation depth <>) . Text.strip) . Text.lines
+  Text.intercalate ",\n" . fmap (indentation depth <>)
 
 propsSorter :: Value -> Int
 propsSorter value =
