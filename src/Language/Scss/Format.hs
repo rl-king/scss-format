@@ -115,10 +115,8 @@ addNewLine depth previous current =
     (_, Comment _)
       | depth == 0 -> newline <> newline
       | depth /= 0 -> mempty
-      | otherwise -> newline
     (_, MultilineComment _)
       | depth == 0 -> newline <> newline
-      | otherwise -> newline
     _ -> newline
 
 matchIndentation :: Int -> [Text] -> Text
