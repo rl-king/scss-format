@@ -66,6 +66,7 @@ prettyPrint color message = do
     stderr
     [Console.SetColor Console.Foreground Console.Dull color]
   Text.hPutStrLn stderr message
+  Console.setSGR [Reset]
 
 verify :: Text -> Text -> Text -> Either Text Text
 verify p i f
