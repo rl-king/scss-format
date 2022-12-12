@@ -26,11 +26,8 @@ renderValueList depth values =
   mconcat $
     List.zipWith
       (renderValue (depth + 1))
-      (Nothing : fmap Just nestedValues)
-      nestedValues
-  where
-    nestedValues =
-      List.sortOn propsSorter values
+      (Nothing : fmap Just values)
+      values
 
 renderValue :: Int -> Maybe Value -> Value -> Builder
 renderValue depth previous current =
@@ -104,7 +101,7 @@ indent =
 
 indentation :: Int -> Text
 indentation i =
-  Text.replicate i "    "
+  Text.replicate i "  "
 
 addNewLine :: Int -> Maybe Value -> Value -> Builder
 addNewLine depth previous current =
